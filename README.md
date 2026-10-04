@@ -1,12 +1,13 @@
 # AeroSim Knowledge Navigator
 
-面向企业知识库的 RAG（检索增强生成）项目。当前仓库提供配置管理、提示词、Embedding、Reranker、Milvus、MongoDB、MinIO 以及 MinerU 等基础模块，API 和业务流程仍在持续开发中。
+面向企业知识库的 RAG（检索增强生成）项目。当前仓库提供配置管理、提示词、模型能力和基础设施适配层，API 与业务流程仍在持续开发中。
 
 ## 当前能力
 
 - 使用 BGE-M3 生成稠密向量和稀疏向量。
 - 使用 BGE Reranker 对候选结果进行重排序。
 - 封装 Milvus 向量检索、MongoDB 会话历史和 MinIO 对象存储。
+- 通过 `app/infra` 提供 LLM、Embedding、Reranker、MinerU、Milvus、MongoDB 和 MinIO 的统一访问入口。
 - 集中管理 LLM、视觉模型、MinerU 和 DashScope MCP 等外部服务配置。
 - 提供文档解析、查询改写、图像摘要和答案生成等提示词模板。
 
@@ -74,16 +75,19 @@ uv run python app/shared/tool/tool/download_reranker.py
 uv run python test/01_env_test.py
 ```
 
-该命令会读取 `.env` 并输出 `BGE_M3_PATH`。当前仓库尚未提供统一的 API 启动入口，导入服务和查询服务的入口会在业务模块完善后补充。
+该命令会读取 `.env` 并输出 `BGE_M3_PATH`。当前仓库尚未提供统一的 HTTP API 启动入口，导入服务和查询服务的入口会在业务编排模块完善后补充。
 
 ## 目录结构
 
 ```text
 app/
-├── api/                 # API 层（开发中）
-├── infra/               # 基础设施适配（开发中）
-├── process/             # 业务流程（开发中）
-├── rag/                 # RAG 流程（开发中）
+├── infra/               # 基础设施适配层
+│   ├── config/          # 聚合应用与外部服务配置
+│   ├── document_parse/  # MinerU 文档解析网关
+│   ├── llm/             # LLM、Embedding 和 Reranker 提供者
+│   ├── object_storage/  # MinIO 对象存储网关
+│   ├── persistence/     # MongoDB 会话历史仓储
+│   └── vectorstore/     # Milvus 向量检索网关
 ├── resources/prompts/   # LLM、查询改写和图像处理提示词
 └── shared/
     ├── config/          # 环境变量与服务配置
@@ -96,6 +100,8 @@ app/
 test/                    # 环境与功能验证脚本
 doc/                     # 项目文档
 ```
+
+业务编排目录和 HTTP API 入口将在后续迭代中接入 `app/infra` 提供的网关与提供者。
 
 ## 开发约定
 
