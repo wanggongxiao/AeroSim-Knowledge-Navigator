@@ -44,22 +44,23 @@ graph_default_state: ImportGraphState = {
     "embeddings_content": [],
 }
 
-def creae_default_state(**arges) -> ImportGraphState:
+def create_default_state(**kwargs) -> ImportGraphState:
     """
     创建一个state根据指定参数创建
     ：:param:可以随意传入参数，注意参数名要和state一样
     :return:state
     """
     deepcopy_new_state = copy.deepcopy(graph_default_state)
-    deepcopy_new_state.update(arges)
+    deepcopy_new_state.update(kwargs)
     return deepcopy_new_state
 
 # 获取创建好的默认的空的state
-def get_default_state() -> ImportGraphState:
-    return graph_default_state
+def get_default_state(**kwargs) -> ImportGraphState:
+    """返回一个独立的默认状态副本，并覆盖传入的字段。"""
+    return create_default_state(**kwargs)
 
-# if __name__ == "__main__":
-#     graph_default_state = get_default_state(task_id="007",local_file_path="./烫金机.pdf")
-#     import json
-#     # 打印json格式
-#     print(json.dumps(graph_default_state, indent=4))
+if __name__ == "__main__":
+    graph_state = get_default_state(task_id="007",local_file_path="./烫金机.pdf")
+    import json
+    # 打印json格式
+    print(json.dumps(graph_state, indent=4))

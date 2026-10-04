@@ -103,6 +103,21 @@ doc/                     # 项目文档
 
 业务编排目录和 HTTP API 入口将在后续迭代中接入 `app/infra` 提供的网关与提供者。
 
+## 导入流程状态
+
+导入流程使用 `ImportGraphState` 保存任务、文件路径、解析结果和向量化结果。通过 `get_default_state` 创建独立状态副本，并传入初始字段：
+
+```python
+from app.process.import_.agent.state import get_default_state
+
+state = get_default_state(
+    task_id="007",
+    local_file_path="./烫金机.pdf",
+)
+```
+
+状态工厂会深拷贝默认值，多个任务之间不会共享 `chunks` 或 `embeddings_content` 等列表字段。
+
 ## 开发约定
 
 - 使用 `uv` 管理依赖和运行命令，依赖版本记录在 `uv.lock`。
