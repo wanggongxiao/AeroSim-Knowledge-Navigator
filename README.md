@@ -118,6 +118,24 @@ state = get_default_state(
 
 状态工厂会深拷贝默认值，多个任务之间不会共享 `chunks` 或 `embeddings_content` 等列表字段。
 
+## 导入流程（开发中）
+
+导入流程按以下节点处理文档：
+
+```text
+node_entry
+  -> node_pdf_to_md
+  -> node_md_img
+  -> node_document_split
+  -> node_item_name_recognition
+  -> node_bge_embedding
+  -> node_import_milvus
+```
+
+节点位于 `app/process/import_/agent/nodes/`，具体处理服务位于 `app/rag/import_/`。每个节点接收并返回 `ImportGraphState`，任务状态通过共享工具中的任务和 SSE 方法更新。
+
+当前 `app/process/import_/agent/main_graph.py` 尚未完成图实例化，`app/rag/import_` 下的导入服务仍在实现中，因此暂时不能通过统一入口执行完整导入流程。
+
 ## 开发约定
 
 - 使用 `uv` 管理依赖和运行命令，依赖版本记录在 `uv.lock`。
