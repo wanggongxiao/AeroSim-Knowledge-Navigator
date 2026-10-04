@@ -58,6 +58,22 @@ cp .env.example .env
 
 完整示例见 [`.env.example`](.env.example)。
 
+### IDE 解释器与环境变量
+
+项目依赖的是 `python-dotenv`，代码中的导入名称是 `dotenv`：
+
+```python
+from dotenv import load_dotenv
+```
+
+如果 IDE 在这一行显示波浪线，请将项目解释器设置为 `.venv\\Scripts\\python.exe`，然后重新同步依赖。可以用下面的命令确认终端和项目环境使用的是同一个解释器：
+
+```powershell
+uv run python -c "import sys, dotenv; print(sys.executable); print(dotenv.__file__)"
+```
+
+不要安装名为 `dotenv` 的替代包；项目只需要 `python-dotenv`。
+
 ### 3. 准备模型
 
 将 `BGE_M3_PATH` 和 `BGE_RERANKER_LARGE` 指向本地模型目录。仓库提供了 ModelScope 下载脚本：
@@ -76,6 +92,15 @@ uv run python test/01_env_test.py
 ```
 
 该命令会读取 `.env` 并输出 `BGE_M3_PATH`。当前仓库尚未提供统一的 HTTP API 启动入口，导入服务和查询服务的入口会在业务编排模块完善后补充。
+
+### 5. 验证导入图
+
+```powershell
+uv run python -c "from app.process.import_.agent.main_graph import import_app; print(sorted(import_app.get_graph().nodes))"
+uv run python -m test.01_test_import_graph
+```
+
+第一条命令只验证图可以构建；第二条命令执行当前导入节点骨架并打印图结构。当前服务实现仍是占位逻辑，不会完成真实的外部模型或 Milvus 导入。
 
 ## 目录结构
 
@@ -134,7 +159,7 @@ node_entry
 
 节点位于 `app/process/import_/agent/nodes/`，具体处理服务位于 `app/rag/import_/`。每个节点接收并返回 `ImportGraphState`，任务状态通过共享工具中的任务和 SSE 方法更新。
 
-当前 `app/process/import_/agent/main_graph.py` 尚未完成图实例化，`app/rag/import_` 下的导入服务仍在实现中，因此暂时不能通过统一入口执行完整导入流程。
+`app/process/import_/agent/main_graph.py` 已完成 LangGraph 图编排并导出 `import_app`。`app/rag/import_` 下的导入服务仍在实现中，完整导入流程需要继续接入 MinerU、模型和 Milvus 等外部服务。
 
 ## 开发约定
 
