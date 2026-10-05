@@ -163,6 +163,16 @@ node_entry
 
 `app/process/import_/agent/main_graph.py` 已完成 LangGraph 图编排并导出 `import_app`。`app/rag/import_` 下的导入服务仍在实现中，完整导入流程需要继续接入 MinerU、模型和 Milvus 等外部服务。
 
+### PDF 转 Markdown 当前进度
+
+`app/rag/import_/pdf_parse_service.py` 已提供 PDF 路径校验和 MinerU 上传地址申请逻辑：
+
+- `pdf_path` 必须指向现有 PDF 文件；未填写 `local_dir` 时默认使用项目根目录下的 `output` 文件夹。
+- `local_dir` 不存在时会自动创建。
+- MinerU 请求使用 `MINERU_BASE_URL`、`MINERU_API_TOKEN` 和 `MINERU_MODEL_VERSION` 配置。
+
+解析结果下载、解压、Markdown 文件写入以及状态字段回写仍在开发中，因此当前节点还不能独立完成 PDF 转 Markdown。
+
 ## 开发约定
 
 - 使用 `uv` 管理依赖和运行命令，依赖版本记录在 `uv.lock`。
