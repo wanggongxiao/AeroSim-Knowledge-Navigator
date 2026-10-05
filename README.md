@@ -169,9 +169,9 @@ node_entry
 
 - `pdf_path` 必须指向现有 PDF 文件；未填写 `local_dir` 时默认使用项目根目录下的 `output` 文件夹。
 - `local_dir` 不存在时会自动创建。
-- MinerU 请求使用 `MINERU_BASE_URL`、`MINERU_API_TOKEN` 和 `MINERU_MODEL_VERSION` 配置。
+- MinerU 请求使用 `MINERU_BASE_URL`、`MINERU_API_TOKEN` 和 `MINERU_MODEL_VERSION` 配置；轮询行为由 `MINERU_POLL_TIMEOUT_SECONDS`、`MINERU_POLL_INTERVAL_SECONDS` 和 `MINERU_DOWNLOAD_TIMEOUT_SECONDS` 控制。
 
-解析结果下载、解压、Markdown 文件写入以及状态字段回写仍在开发中，因此当前节点还不能独立完成 PDF 转 Markdown。
+当前代码已覆盖申请上传地址、上传 PDF 和轮询解析结果的基础流程。解析结果 ZIP 的下载与解压、Markdown 文件写入以及状态字段回写仍在开发中，因此当前节点还不能独立完成 PDF 转 Markdown。
 
 ## 开发约定
 
