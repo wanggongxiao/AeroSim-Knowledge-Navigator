@@ -143,6 +143,8 @@ state = get_default_state(
 
 状态工厂会深拷贝默认值，多个任务之间不会共享 `chunks` 或 `embeddings_content` 等列表字段。
 
+`ImportGraphState` 使用 `TypedDict` 声明状态字段，它只提供类型检查和 IDE 补全，不会创建带有自定义方法的对象。运行时的状态仍然是普通 Python 字典，因此可以使用字典方法，例如 `state.get("local_dir")`；字段确定存在时也可以使用 `state["local_dir"]`。两者的区别是：键不存在时，`get` 返回 `None`（或指定的默认值），而下标访问会抛出 `KeyError`。
+
 ## 导入流程（开发中）
 
 导入流程按以下节点处理文档：
