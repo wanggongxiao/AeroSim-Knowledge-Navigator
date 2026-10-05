@@ -1,6 +1,8 @@
 from app.process.import_.agent.state import ImportGraphState
-from app.shared.runtime.logger import logger
+from app.shared.runtime.logger import logger, step_log
+from pathlib import Path
 
+@step_log("resolved_input_file")
 def resolve_input_file(state: ImportGraphState) -> ImportGraphState:
     """
     入口识别服务：
@@ -9,7 +11,7 @@ def resolve_input_file(state: ImportGraphState) -> ImportGraphState:
     3. 回写 is_pdf_read_enabled / is_md_read_enabled
     4. 回写 pdf_path / md_path / file_title
     """
-    local_file_path: str = state.get_local_file_path("local_ile_path")
+    local_file_path: str = state.get("local_ile_path")
     if not local_file_path:
         # 日志：体现错误信息，体现关键参数
         logger.error(f"local_file_pathd的参数为空，业务无法继续，提前终止")
@@ -30,4 +32,13 @@ def resolve_input_file(state: ImportGraphState) -> ImportGraphState:
     else:
         logger.error(f"local_file_path:{local_file_path}既不是pdf,又不是md文件类型，请检查")
         raise TypeError
+
+    local_file_path_obj:Path = Path(local_file_path)
+    if not local_file_path_obj.is_file():
+        # 没有|是文件
+        logger.error(f"local_file_path:{local_file_path_obj}对应的文件不存在或者是文件夹！业务无法继续进行，提前终止！")
+        raise ValueError(f"local_file_path:{local_file_path_obj}对应的文件不存在或者是文件夹！业务无法继续进行，提前终止！")
+
+    file_tile = local_file_path_obj.stem
+    state["file_tile"] = file_tile
     return state
