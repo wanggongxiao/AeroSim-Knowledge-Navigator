@@ -53,10 +53,31 @@ cp .env.example .env
 | Reranker | `BGE_RERANKER_LARGE`、`BGE_RERANKER_DEVICE`、`BGE_RERANKER_FP16` |
 | Milvus | `MILVUS_URL`、`CHUNKS_COLLECTION`、`ENTITY_NAME_COLLECTION`、`ITEM_NAME_COLLECTION` |
 | MongoDB | `MONGO_URL`、`MONGO_DB_NAME` |
-| MinIO | `MINIO_ENDPOINT`、`MINIO_ACCESS_KEY`、`MINIO_SECRET_KEY`、`MINIO_BUCKET_NAME` |
+| MinIO | `MINIO_ENDPOINT`、`MINIO_PUBLIC_ENDPOINT`、`MINIO_ACCESS_KEY`、`MINIO_SECRET_KEY`、`MINIO_BUCKET_NAME` |
 | MinerU | `MINERU_BASE_URL`、`MINERU_API_TOKEN` |
 
 完整示例见 [`.env.example`](.env.example)。
+
+### AutoDL 容器中的 MinIO
+
+AutoDL 容器通常没有 `systemd`，请直接启动 MinIO 进程：
+
+```bash
+mkdir -p /root/minio-data
+export MINIO_ROOT_USER=admin
+export MINIO_ROOT_PASSWORD='请替换为强密码'
+nohup minio server /root/minio-data --address ":9000" --console-address ":9001" > /root/minio.log 2>&1 &
+```
+
+应用和 MinIO 在同一个容器时，`.env` 使用 `MINIO_ENDPOINT=127.0.0.1:9000`。9001 是控制台端口，不用于 Python SDK。需要在本地查看控制台时，可以建立 SSH 隧道：
+
+```bash
+ssh -L 9001:127.0.0.1:9001 root@服务器地址 -p SSH端口
+```
+
+如果 Markdown 中的图片需要被浏览器访问，将 AutoDL 对外暴露的 API 地址填入 `MINIO_PUBLIC_ENDPOINT`；该值只用于生成图片 URL，SDK 仍然使用 `MINIO_ENDPOINT`。
+
+`MINIO_ACCESS_KEY` 和 `MINIO_SECRET_KEY` 应与启动 MinIO 时的 `MINIO_ROOT_USER` 和 `MINIO_ROOT_PASSWORD` 一致。两项留空时，代码会自动读取后两项环境变量；如果应用和 MinIO 是在不同终端启动的，请把凭据明确写入应用的环境变量。
 
 ### IDE 解释器与环境变量
 

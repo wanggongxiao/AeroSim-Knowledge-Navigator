@@ -10,3 +10,7 @@ MINERU_POLL_INTERVAL_SECONDS = 3
 
 # MinerU 文件下载超时时间（单位：秒），下载文件超过此时长则中断
 MINERU_DOWNLOAD_TIMEOUT_SECONDS = 30
+
+
+# 图片的常用后缀名
+SUPPORTED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp"}

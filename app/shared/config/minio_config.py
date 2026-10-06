@@ -9,6 +9,7 @@ from app.shared.config.common import env_bool, env_str
 @dataclass
 class MinIOConfig:
     endpoint: str
+    public_endpoint: str
     access_key: str
     secret_key: str
     bucket_name: str
@@ -17,9 +18,10 @@ class MinIOConfig:
 
 
 minio_config = MinIOConfig(
-    endpoint=env_str("MINIO_ENDPOINT"),
-    access_key=env_str("MINIO_ACCESS_KEY"),
-    secret_key=env_str("MINIO_SECRET_KEY"),
+    endpoint=env_str("MINIO_ENDPOINT", "127.0.0.1:9000"),
+    public_endpoint=env_str("MINIO_PUBLIC_ENDPOINT", ""),
+    access_key=env_str("MINIO_ACCESS_KEY") or env_str("MINIO_ROOT_USER"),
+    secret_key=env_str("MINIO_SECRET_KEY") or env_str("MINIO_ROOT_PASSWORD"),
     bucket_name=env_str("MINIO_BUCKET_NAME"),
     minio_img_dir=env_str("MINIO_IMG_DIR"),
     minio_secure=env_bool("MINIO_SECURE"),
