@@ -1,11 +1,31 @@
 import re
 
+from pyexpat.errors import messages
+
 from app.process.import_.agent.state import ImportGraphState
 from pathlib import Path
 from typing import Tuple
 
 from app.rag.import_.config import SUPPORTED_IMAGE_EXTENSIONS, IMAGE_CONTEXT_SUB_CHARS
 from app.shared.runtime.logger import logger,PROJECT_ROOT
+from app.infra.llm.providers import llm_provider
+from app.shared.runtime.load_prompt import load_prompt
+from mimetypes import guess_type
+import base64
+from langchain_core.message import HumanMessage
+from langchain_core.output_parsers import StrOutputParser
+
+message = HumanMessage(
+    content=[
+        {"type": "text", "text": "请描述这张图片"},
+        {
+            "type": "image_url",
+            "image_url": {
+                "url": "https://example.com/image.png"
+            },
+        },
+    ]
+)
 
 def vaildate_and_data(state:ImportGraphState)->Tuple[Path, Path,str]:
 
@@ -80,6 +100,41 @@ def scan_images(md_content, md_image_dir_obj) -> list[tuple[str,str,tuple[str,st
 
     return image_info_list
 
+
+def summarize_images(image_info_list:list[tuple[str,str,tuple[str,str]]],root_folder:str)->dict[str,str]:
+    """
+    调用视觉模型，识别图片的含义
+    :param image_info_list:
+    :return:
+    """
+    summarizer_image_dict:dict[str,str] = {}
+
+    # 准备模型对象
+    vision_model = llm_provider.vision_chat()
+    for image_name, image_path, image_info in image_info_list:
+        # 循环list数据，获取每一张图片
+        image_prompt_text = load_prompt("image_summary",root_folder=root_folder,image_content=image_info)
+        image_path_obj:Path = Path(image_path)
+        image_base64_str:str = base64.b64encode(image_path_obj.read_bytes()).decode(encoding="utf-8")
+        messages = HumanMessage(
+            {
+                "type" : "image_url",
+                "image_ulr" : {"ulr":f"data:{guess_type(image_path)[0]};base64,{image_base64_str}"}
+            },
+            {
+                "type":"text","text":image_prompt_text
+            }
+        )
+        # 调用视觉模型
+        chains = vision_model | StrOutputParser()
+        image_summary = chains.invoke([messages])
+        # 拼接结果到字典中
+        summarizer_image_dict[image_name] = image_summary
+        logger.info(f"完成：{image_name}图像识别")
+        # 循环外返回字典数据
+    pass
+
+
 def enrich_markdown_images(state: ImportGraphState) -> ImportGraphState:
     """
     Markdown 图片增强服务：
@@ -97,4 +152,7 @@ def enrich_markdown_images(state: ImportGraphState) -> ImportGraphState:
         return state
     # 获取图片中的上下文
     image_info_list:list[tuple[str,str,tuple[str,str]]] = scan_images(md_content,md_image_dir_obj)
+
+    # 调用视觉模型
+    summarizer_image_dict:dict= summarize_images(image_info_list,md_image_dir_obj.stem)
     return state
