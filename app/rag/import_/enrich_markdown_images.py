@@ -1,8 +1,10 @@
+import re
+
 from app.process.import_.agent.state import ImportGraphState
 from pathlib import Path
 from typing import Tuple
 
-from app.rag.import_.config import SUPPORTED_IMAGE_EXTENSIONS
+from app.rag.import_.config import SUPPORTED_IMAGE_EXTENSIONS, IMAGE_CONTEXT_SUB_CHARS
 from app.shared.runtime.logger import logger,PROJECT_ROOT
 
 def vaildate_and_data(state:ImportGraphState)->Tuple[Path, Path,str]:
@@ -34,21 +36,50 @@ def vaildate_and_data(state:ImportGraphState)->Tuple[Path, Path,str]:
     # 返回参数
     return md_path, md_image_dir, md_content
 
-def scan_images(md_content,md_image_dir_obj) -> list[tuple[str,str,tuple[str,str]]]:
+def scan_images(md_content, md_image_dir_obj) -> list[tuple[str,str,tuple[str,str]]]:
     """
     获取每张图片在md_content中的信息（图片名/图片地址/前后信息）
     :param md_content:
     :param md_image_dir_obj:
     :return:
     """
+    image_info_list = []
     for image_file_obj in md_image_dir_obj.iterdir():
         if image_file_obj.suffix not in SUPPORTED_IMAGE_EXTENSIONS:
             # 不是图片
             logger.info(f"此次处理的文件：{image_file_obj}不是图片，略此次！！！")
             continue
-        
+        image_name:str = image_file_obj.name
+        image_path:str = str(image_file_obj)
+        # 是一张图片，图片名->md_content是否存在 ！[]（xxx）
+        reg = re.compile(r"\!\[.*?\]\(.*?"+re.escape(image_name)+r".*?\)")
+        search_match = reg.search(md_content)
+        if not search_match:
+            # 为空，没匹配到
+            logger.warning(f"{image_name}没有在md_content引用，跳过，直接下一次！！！")
+            continue
+        # 找到有一章正常的图片
+        start = search_match.start()
+        end = search_match.end()
+        #todo
+        pre_content:str = md_content[max(0,start-IMAGE_CONTEXT_SUB_CHARS),start]
+        post_content:str = md_content[end,min(end+IMAGE_CONTEXT_SUB_CHARS,len(md_content))]
+        logger.debug(f"{image_name}:被引用，pre_content:{pre_content}")
+        logger.debug(f"{image_name}:被引用，post_content:{post_content}")
+        image_info_list.append(
+            (
+                image_name,
+                image_path,
+                (
+                    pre_content,
+                    post_content
+                )
+            )
+        )
+    logger.info(f"所有图片已经处理完毕")
 
-    pass
+    return image_info_list
+
 def enrich_markdown_images(state: ImportGraphState) -> ImportGraphState:
     """
     Markdown 图片增强服务：
