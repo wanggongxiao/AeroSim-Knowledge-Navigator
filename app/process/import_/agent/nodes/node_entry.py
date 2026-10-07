@@ -31,17 +31,10 @@ if __name__ == '__main__':
     # 测试2: MD文件
     test_state2 = create_default_state(
         task_id="test_task_002",
-        local_file_path="小米用户手册.md"
+        local_file_path=r"F:\Agent\项目\github\AeroSim-Knowledge-Navigator\doc\hak180产品安全手册.pdf"
     )
     result_2 = node_entry(test_state2)
     print(f"第二次测试结果: \n {json.dumps(result_2, indent=4, ensure_ascii=False)}")
-    # 测试3: PDF文件
-    test_state3 = create_default_state(
-        task_id="test_task_003",
-        local_file_path="万用表的使用.pdf"
-    )
-    result_3 = node_entry(test_state3)
 
-    print(f"第三次测试结果: \n {json.dumps(result_3, indent=4, ensure_ascii=False)}")
 
     logger.info("===== 结束node_entry节点单元测试 =====")

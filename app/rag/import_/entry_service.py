@@ -11,7 +11,7 @@ def resolve_input_file(state: ImportGraphState) -> ImportGraphState:
     3. 回写 is_pdf_read_enabled / is_md_read_enabled
     4. 回写 pdf_path / md_path / file_title
     """
-    local_file_path: str = state.get("local_ile_path")
+    local_file_path: str = state.get("local_file_path")
     if not local_file_path:
         # 日志：体现错误信息，体现关键参数
         logger.error(f"local_file_pathd的参数为空，业务无法继续，提前终止")
