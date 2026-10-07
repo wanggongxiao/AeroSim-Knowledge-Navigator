@@ -16,6 +16,8 @@ from langchain_core.message import HumanMessage
 from langchain_core.output_parsers import StrOutputParser
 
 from app.shared.utils.rate_limit_utils import apply_api_rate_limit
+from app.infra.object_storage.minio_gateway import minio_gateway
+from minio.deleteobjects import DeleteObject
 
 message = HumanMessage(
     content=[
@@ -84,8 +86,8 @@ def scan_images(md_content, md_image_dir_obj) -> list[tuple[str,str,tuple[str,st
         start = search_match.start()
         end = search_match.end()
         #todo
-        pre_content:str = md_content[max(0,start-IMAGE_CONTEXT_SUB_CHARS),start]
-        post_content:str = md_content[end,min(end+IMAGE_CONTEXT_SUB_CHARS,len(md_content))]
+        pre_content:str = md_content[max(0,start-IMAGE_CONTEXT_SUB_CHARS):start]
+        post_content:str = md_content[end : min(end+IMAGE_CONTEXT_SUB_CHARS,len(md_content))]
         logger.debug(f"{image_name}:被引用，pre_content:{pre_content}")
         logger.debug(f"{image_name}:被引用，post_content:{post_content}")
         image_info_list.append(
@@ -136,6 +138,32 @@ def summarize_images(image_info_list:list[tuple[str,str,tuple[str,str]]],root_fo
         summarizer_image_dict[image_name] = image_summary
         logger.info(f"完成：{image_name}图像识别")
         # 循环外返回字典数据
+    return summarizer_image_dict
+
+
+def upload_image_get_rul(image_info_list:list[tuple[str,str,tuple[str,str]]] , stem:str)->dict[str,str]:
+    """
+    上传文件，并获取文件的访问url地址
+    :param image_info_list:
+    :param stem:
+    :return:
+    """
+    # 删除minio中对应文件的所有图片
+    minio_client = minio_gateway.client()
+    list_object = minio_client.list_objects(
+        bucket_name=minio_gateway.bucket_name,
+        prefix=minio_gateway.image_dir[1:] + "/" + stem,
+        recursive=True
+    )
+    delete_objetc_list = [DeleteObject(obj.object_name) for obj in list_object]
+    errors = minio_client.delete_objects(
+        bucket_name=minio_gateway.bucket_name,
+        delete_objects=delete_objetc_list
+    )
+    for error  in errors:
+        logger.warning(f"删除图片出现问题：{error}")
+    # 重写上传对应的文件
+    # 记录图片和对应的反问地址
     pass
 
 
@@ -159,4 +187,5 @@ def enrich_markdown_images(state: ImportGraphState) -> ImportGraphState:
 
     # 调用视觉模型
     summarizer_image_dict:dict= summarize_images(image_info_list,md_image_dir_obj.stem)
+    image_url_dict: dict[str:str] = upload_image_get_rul(image_info_list,md_image_dir_obj.stem)
     return state
