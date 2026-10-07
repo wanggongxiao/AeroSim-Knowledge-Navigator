@@ -149,6 +149,7 @@ def upload_image_get_rul(image_info_list:list[tuple[str,str,tuple[str,str]]] , s
     :return:
     """
     # 删除minio中对应文件的所有图片
+    image_url_dict:dict[str:str] = {}
     minio_client = minio_gateway.client()
     list_object = minio_client.list_objects(
         bucket_name=minio_gateway.bucket_name,
@@ -163,8 +164,21 @@ def upload_image_get_rul(image_info_list:list[tuple[str,str,tuple[str,str]]] , s
     for error  in errors:
         logger.warning(f"删除图片出现问题：{error}")
     # 重写上传对应的文件
+    for image_name,image_path  in image_info_list:
+        try:
+            minio_client.fput_object(
+                bucket_name=minio_gateway.bucket_name,
+                object_name=minio_gateway.image_dir+"/"+stem + "/" +image_name,#对象会决定在minio中的显示
+                file_path=image_path,
+                content_type=guess_type(image_path)[0]
+            )
+            url = minio_gateway.build_image_url(stem,image_path)
+            image_url_dict[image_name] = url
+            logger.debug(f"image_name:{image_name}已经完成上传")
+        except Exception as e:
+            logger.warning(f"{image_name}上传失败，跳过，继续上传图片！！！")
     # 记录图片和对应的反问地址
-    pass
+    return image_url_dict
 
 
 def enrich_markdown_images(state: ImportGraphState) -> ImportGraphState:
