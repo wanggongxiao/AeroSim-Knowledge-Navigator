@@ -1,4 +1,5 @@
 import re
+from multiprocessing.spawn import old_main_modules
 
 from pyexpat.errors import messages
 
@@ -181,6 +182,26 @@ def upload_image_get_rul(image_info_list:list[tuple[str,str,tuple[str,str]]] , s
     return image_url_dict
 
 
+def md_content_image_replace(ord_md_content:str, summarizer_image_dict:dict[str,str], image_url_dict:dict[str,str])->str:
+    """
+        完成md_content的内的图片替换
+    :param ord_md_content:原md内容
+    :param summarizer_image_dict:图片和对应的描述
+    :param image_url_dict:图片和对应的地址
+    :return:替换后的md_content内容
+    """
+    # 循环处理图片的字典
+    for image_name, image_summary in summarizer_image_dict.items():
+       # 获取每张图片的信息
+        image_url = image_url_dict.get(image_name)
+        # 定义匹配正则
+        reg = re.compile(r"\!\[.*?]\(.*?"+re.escape(image_name)+r".*?\)")
+        # 使用正则内容进行替换
+        ord_md_content = reg.sub(lambda _:f"![{image_name}]{image_url}",ord_md_content)
+        logger.debug(f"已经完成{image_name}的内容替换")
+    return ord_md_content
+
+
 def enrich_markdown_images(state: ImportGraphState) -> ImportGraphState:
     """
     Markdown 图片增强服务：
@@ -202,4 +223,5 @@ def enrich_markdown_images(state: ImportGraphState) -> ImportGraphState:
     # 调用视觉模型
     summarizer_image_dict:dict= summarize_images(image_info_list,md_image_dir_obj.stem)
     image_url_dict: dict[str:str] = upload_image_get_rul(image_info_list,md_image_dir_obj.stem)
+    md_content_new = md_content_image_replace(md_content,summarizer_image_dict,image_url_dict)
     return state
