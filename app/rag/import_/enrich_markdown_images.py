@@ -15,6 +15,8 @@ import base64
 from langchain_core.message import HumanMessage
 from langchain_core.output_parsers import StrOutputParser
 
+from app.shared.utils.rate_limit_utils import apply_api_rate_limit
+
 message = HumanMessage(
     content=[
         {"type": "text", "text": "请描述这张图片"},
@@ -127,6 +129,8 @@ def summarize_images(image_info_list:list[tuple[str,str,tuple[str,str]]],root_fo
         )
         # 调用视觉模型
         chains = vision_model | StrOutputParser()
+        apply_api_rate_limit()
+        # 添加访问限制
         image_summary = chains.invoke([messages])
         # 拼接结果到字典中
         summarizer_image_dict[image_name] = image_summary
