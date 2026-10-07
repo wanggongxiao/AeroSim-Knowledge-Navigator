@@ -8,12 +8,12 @@ from pathlib import Path
 from typing import Tuple
 
 from app.rag.import_.config import SUPPORTED_IMAGE_EXTENSIONS, IMAGE_CONTEXT_SUB_CHARS
-from app.shared.runtime.logger import logger,PROJECT_ROOT
+from app.shared.runtime.logger import logger, PROJECT_ROOT, step_log
 from app.infra.llm.providers import llm_provider
 from app.shared.runtime.load_prompt import load_prompt
 from mimetypes import guess_type
 import base64
-from langchain_core.message import HumanMessage
+from langchain_core.messages import HumanMessage
 from langchain_core.output_parsers import StrOutputParser
 
 from app.shared.utils.rate_limit_utils import apply_api_rate_limit
@@ -31,7 +31,7 @@ message = HumanMessage(
         },
     ]
 )
-
+@step_log("vaildate_and_data")
 def vaildate_and_data(state:ImportGraphState)->Tuple[Path, Path,str]:
 
     """
@@ -61,6 +61,7 @@ def vaildate_and_data(state:ImportGraphState)->Tuple[Path, Path,str]:
     # 返回参数
     return md_path, md_image_dir, md_content
 
+@step_log("scan_images")
 def scan_images(md_content, md_image_dir_obj) -> list[tuple[str,str,tuple[str,str]]]:
     """
     获取每张图片在md_content中的信息（图片名/图片地址/前后信息）
@@ -105,7 +106,7 @@ def scan_images(md_content, md_image_dir_obj) -> list[tuple[str,str,tuple[str,st
 
     return image_info_list
 
-
+@step_log("summarize_images")
 def summarize_images(image_info_list:list[tuple[str,str,tuple[str,str]]],root_folder:str)->dict[str,str]:
     """
     调用视觉模型，识别图片的含义
@@ -121,14 +122,24 @@ def summarize_images(image_info_list:list[tuple[str,str,tuple[str,str]]],root_fo
         image_prompt_text = load_prompt("image_summary",root_folder=root_folder,image_content=image_info)
         image_path_obj:Path = Path(image_path)
         image_base64_str:str = base64.b64encode(image_path_obj.read_bytes()).decode(encoding="utf-8")
+        mime_type = guess_type(image_path)[0] or "image/png"
+
         messages = HumanMessage(
-            {
-                "type" : "image_url",
-                "image_ulr" : {"ulr":f"data:{guess_type(image_path)[0]};base64,{image_base64_str}"}
-            },
-            {
-                "type":"text","text":image_prompt_text
-            }
+            content=[
+                {
+                    "type": "text",
+                    "text": image_prompt_text,
+                },
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": (
+                            f"data:{mime_type};"
+                            f"base64,{image_base64_str}"
+                        ),
+                    },
+                },
+            ]
         )
         # 调用视觉模型
         chains = vision_model | StrOutputParser()
@@ -141,7 +152,7 @@ def summarize_images(image_info_list:list[tuple[str,str,tuple[str,str]]],root_fo
         # 循环外返回字典数据
     return summarizer_image_dict
 
-
+@step_log("upload_image_get_rul")
 def upload_image_get_rul(image_info_list:list[tuple[str,str,tuple[str,str]]] , stem:str)->dict[str,str]:
     """
     上传文件，并获取文件的访问url地址
@@ -158,14 +169,14 @@ def upload_image_get_rul(image_info_list:list[tuple[str,str,tuple[str,str]]] , s
         recursive=True
     )
     delete_objetc_list = [DeleteObject(obj.object_name) for obj in list_object]
-    errors = minio_client.delete_objects(
+    errors = minio_client.remove_objects(
         bucket_name=minio_gateway.bucket_name,
-        delete_objects=delete_objetc_list
+        delete_object_list=delete_objetc_list
     )
     for error  in errors:
         logger.warning(f"删除图片出现问题：{error}")
     # 重写上传对应的文件
-    for image_name,image_path  in image_info_list:
+    for image_name, image_path, _ in image_info_list:
         try:
             minio_client.fput_object(
                 bucket_name=minio_gateway.bucket_name,
@@ -173,7 +184,7 @@ def upload_image_get_rul(image_info_list:list[tuple[str,str,tuple[str,str]]] , s
                 file_path=image_path,
                 content_type=guess_type(image_path)[0]
             )
-            url = minio_gateway.build_image_url(stem,image_path)
+            url = minio_gateway.build_image_url(stem, image_name)
             image_url_dict[image_name] = url
             logger.debug(f"image_name:{image_name}已经完成上传")
         except Exception as e:
@@ -181,7 +192,7 @@ def upload_image_get_rul(image_info_list:list[tuple[str,str,tuple[str,str]]] , s
     # 记录图片和对应的反问地址
     return image_url_dict
 
-
+@step_log("md_content_image_replace")
 def md_content_image_replace(ord_md_content:str, summarizer_image_dict:dict[str,str], image_url_dict:dict[str,str])->str:
     """
         完成md_content的内的图片替换
@@ -201,7 +212,7 @@ def md_content_image_replace(ord_md_content:str, summarizer_image_dict:dict[str,
         logger.debug(f"已经完成{image_name}的内容替换")
     return ord_md_content
 
-
+@step_log("enrich_markdown_images")
 def enrich_markdown_images(state: ImportGraphState) -> ImportGraphState:
     """
     Markdown 图片增强服务：

@@ -3,8 +3,9 @@ import os
 from app.process.import_.agent.nodes.node_md_img import node_md_img
 from app.shared.runtime.logger import logger
 from app.shared.utils.path_util import PROJECT_ROOT
+from dotenv import load_dotenv
 
-
+load_dotenv(override=True)
 def main() -> None:
     logger.info(f"本地测试 - 项目根目录：{PROJECT_ROOT}")
 
