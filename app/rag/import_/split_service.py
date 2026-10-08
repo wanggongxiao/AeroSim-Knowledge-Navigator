@@ -1,9 +1,13 @@
+from operator import index
 from pathlib import Path
 from typing import Any
 
 from app.process.import_.agent.state import ImportGraphState
 from app.shared.runtime.logger import logger
 import re
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+CHUNK_SIZE = 1000
+CHUNK_OVERLAP = 50
 
 def vaildate_get_data(state:ImportGraphState)->tuple[str,str]:
     """
@@ -104,6 +108,57 @@ def split_document_by_title(md_content:str, file_title:str)->list[dict[str,Any]]
     return chunks
 
 
+def _split_chunk_content(chunk:dict[str,Any]) -> list[dict[str,Any]]:
+    """
+    内部函数，长chunk的切短
+    :param chunk:
+    :return:
+    """
+    sub_chunks:list[dict[str,Any]] = []
+    content:str = chunk.get("content")
+    deal_content:str = content[len(chunk.get("title"))+1:]
+    prefix = chunk.get("title") + "\n"
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=CHUNK_SIZE - len(prefix),
+        chunk_overlap=CHUNK_OVERLAP,
+        separator=["\n\n","\n","、","?",",","：","，"]
+    )
+    for index,text in splitter.spilt_text(deal_content):
+         sub_chunks.append(
+             {
+                 "file_title":chunk.get("file_title"),
+                 "parent_title":chunk.get("title"),
+                 "title":f"{chunk.get('title')}_{index}",
+                 "part":index,
+                 "content":prefix + text
+             }
+         )
+
+    return sub_chunks
+
+
+def refine_split_and_merge_chunks(chunks:list[dict[str,Any]]) -> list[dict[str,Any]]:
+    """
+    精细切割
+    :param chunks:
+    :return:
+    """
+    # 定义一个接受本方法返回的chunk 列表
+    refined_chunks:list[dict[str,Any]] = []
+    # 循环chunks->chunk->是否超长->触发切割
+    for chunk in chunks:
+        if len(chunk.get("content")) > 600:
+            # 切割
+        refined_chunks.extend(_split_chunk_content(chunk))
+        else:
+            # 不用切割
+            refined_chunks.append(chunk)
+
+    # 进行切割后列表进行短合并
+    # 返回最终的处理结果
+
+
+
 def split_document(state: ImportGraphState) -> ImportGraphState:
     """
     文档切分服务：
@@ -117,4 +172,7 @@ def split_document(state: ImportGraphState) -> ImportGraphState:
     md_content,file_title = vaildate_get_data(state)
     # 根据语义进行切割
     chunks:list[dict[str,Any]] = split_document_by_title(md_content,file_title)
+
+    # 进行chunks的精细切割和合并
+    chunks:list[dict[str,Any]] = refine_split_and_merge_chunks(chunks)
     return state
