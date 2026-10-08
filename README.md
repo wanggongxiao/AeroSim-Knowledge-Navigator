@@ -10,6 +10,7 @@
 - 通过 `app/infra` 提供 LLM、Embedding、Reranker、MinerU、Milvus、MongoDB 和 MinIO 的统一访问入口。
 - 集中管理 LLM、视觉模型、MinerU 和 DashScope MCP 等外部服务配置。
 - 提供文档解析、查询改写、图像摘要和答案生成等提示词模板。
+- 导入图已接入 Markdown 图片处理与文档切分节点，标题切分逻辑仍在开发中。
 
 ## 环境要求
 
@@ -134,6 +135,8 @@ app/
 │   ├── object_storage/  # MinIO 对象存储网关
 │   ├── persistence/     # MongoDB 会话历史仓储
 │   └── vectorstore/     # Milvus 向量检索网关
+├── process/import_/      # LangGraph 导入流程与节点
+├── rag/import_/          # PDF、Markdown、切分等导入服务
 ├── resources/prompts/   # LLM、查询改写和图像处理提示词
 └── shared/
     ├── config/          # 环境变量与服务配置
@@ -147,7 +150,7 @@ test/                    # 环境与功能验证脚本
 doc/                     # 项目文档
 ```
 
-业务编排目录和 HTTP API 入口将在后续迭代中接入 `app/infra` 提供的网关与提供者。
+HTTP API 入口将在后续迭代中接入 `app/infra` 提供的网关与提供者。
 
 ## 导入流程状态
 
@@ -193,6 +196,12 @@ node_entry
 - MinerU 请求使用 `MINERU_BASE_URL`、`MINERU_API_TOKEN` 和 `MINERU_MODEL_VERSION` 配置；轮询行为由 `MINERU_POLL_TIMEOUT_SECONDS`、`MINERU_POLL_INTERVAL_SECONDS` 和 `MINERU_DOWNLOAD_TIMEOUT_SECONDS` 控制。
 
 当前代码已覆盖申请上传地址、上传 PDF、轮询解析结果、下载 ZIP 并解压出 Markdown 文件。结果会保存到 `local_dir/<PDF文件名>/`；导入状态中的 `md_path`、`md_content` 等字段回写以及后续向量化流程仍在开发中。
+
+### Markdown 标题切分
+
+`node_document_split` 调用 `app/rag/import_/split_service.py`。当前代码优先读取状态中的 `md_content`，为空时尝试从 `md_path` 读取文件；`split_document_by_title` 开始按 Markdown 标题构造包含 `title`、`content`、`file_title` 的块。
+
+这部分尚未完成：切分结果目前没有回写到 `state["chunks"]`，标题边界和空块处理也需要完善；超长块的二次切分以及后续实体提取、向量化和入库仍在开发中。
 
 ## 开发约定
 

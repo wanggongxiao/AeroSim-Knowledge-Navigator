@@ -1,7 +1,9 @@
 from pathlib import Path
+from typing import Any
 
 from app.process.import_.agent.state import ImportGraphState
 from app.shared.runtime.logger import logger
+import re
 
 def vaildate_get_data(state:ImportGraphState)->tuple[str,str]:
     """
@@ -26,7 +28,60 @@ def vaildate_get_data(state:ImportGraphState)->tuple[str,str]:
         file_title = Path(md_path).stem or "default"
         logger.warning(f"file_title为空，给默认值：{file_title}")
         state["file_title"] = file_title
+    # 清洗和替换数据，统一不同的系统，换成\n
+    md_content = md_content.replace("\r\n", "\n").replace("\r", "\n")
     return md_content,file_title
+
+
+def split_document_by_title(md_content:str, file_title:str)->list[dict[str,Any]]:
+    """
+    根据标题进行文档内容给的切割
+    :param md_content:
+    :param file_title:
+    :return:
+    """
+    # 根据\n切换若干个行，看是不是标题
+
+    # 定义存储数据的容器
+    chunks:list[dict[str,Any]] = [] # 记录历史数据的整体数据，标题+行的数据库-》向量数据库
+    current_title:str | None = None
+    current_title_lines:list[str] = []
+    # md_content的内容切割
+    title_reg = re.compile(r"^\S*#{1,6}\s.+")
+    md_content_lines = md_content.split("\n")
+    for line in md_content_lines:
+        line_strip:str = line.strip()
+        if not line_strip:
+            logger.debug(f"当前行为空行，跳过了处理！！")
+            continue
+        # 是不是标题
+        if(title_reg.match(line_strip)):
+            # 当前行是标题行
+            if not current_title:
+                chunks.append(
+                    {
+                        "title":current_title,
+                        "content":"\n".join(current_title_lines),
+                        "file_title":file_title
+                    }
+                )
+            current_title = line_strip
+            current_title_lines = [line_strip]
+        else:
+            # 当前行是普通行
+            current_title_lines.append(line_strip)
+    # 考虑最后一行没计算的问题
+    if len(current_title_lines) >1:
+        chunks.append(
+            {
+                "title": current_title,
+                "content": "\n".join(current_title_lines),
+                "file_title": file_title
+            }
+        )
+
+    logger.info(f"已经完成了文档的切割！！！！")
+    return chunks
 
 
 def split_document(state: ImportGraphState) -> ImportGraphState:
@@ -40,4 +95,6 @@ def split_document(state: ImportGraphState) -> ImportGraphState:
 
     # 获取并校验参数
     md_content,file_title = vaildate_get_data(state)
+    # 根据语义进行切割
+    chunks:list[dict[str,Any]] = split_document_by_title(md_content,file_title)
     return state
