@@ -46,6 +46,7 @@ def split_document_by_title(md_content:str, file_title:str)->list[dict[str,Any]]
     chunks:list[dict[str,Any]] = [] # 记录历史数据的整体数据，标题+行的数据库-》向量数据库
     current_title:str | None = None
     current_title_lines:list[str] = []
+    is_code:bool = False
     # md_content的内容切割
     title_reg = re.compile(r"^\S*#{1,6}\s.+")
     md_content_lines = md_content.split("\n")
@@ -54,10 +55,15 @@ def split_document_by_title(md_content:str, file_title:str)->list[dict[str,Any]]
         if not line_strip:
             logger.debug(f"当前行为空行，跳过了处理！！")
             continue
+        # 是否进去或者输出代码块
+        if line_strip.startswith("``` ") or line_strip.startswith("```"):
+            # 进入或者出去
+            current_title_lines.append(line)
+            is_code = not is_code
         # 是不是标题
-        if(title_reg.match(line_strip)):
+        if not is_code and title_reg.match(line_strip):
             # 当前行是标题行
-            if not current_title:
+            if not current_title and len(current_title_lines) > 1:
                 chunks.append(
                     {
                         "title":current_title,
@@ -65,6 +71,16 @@ def split_document_by_title(md_content:str, file_title:str)->list[dict[str,Any]]
                         "file_title":file_title
                     }
                 )
+
+            # else:
+            #     # 连续标题
+            #     current_title = current_title + "-" + line_strip
+            #     current_title_lines = [current_title]
+            #     continue
+            if current_title and len(current_title_lines) == 1:
+                current_title = current_title + "-" + line_strip
+                current_title_lines = [current_title]
+                continue
             current_title = line_strip
             current_title_lines = [line_strip]
         else:
