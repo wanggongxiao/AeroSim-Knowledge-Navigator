@@ -82,6 +82,10 @@ def split_document_by_title(md_content:str, file_title:str)->list[dict[str,Any]]
                 current_title_lines = [current_title]
                 continue
             current_title = line_strip
+            if not current_title and len(current_title_lines) > 0:
+                current_title_lines.append(line_strip)
+            else :
+                current_title_lines = [current_title]
             current_title_lines = [line_strip]
         else:
             # 当前行是普通行
