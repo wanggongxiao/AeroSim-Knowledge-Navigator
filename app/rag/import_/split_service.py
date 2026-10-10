@@ -1,4 +1,3 @@
-from operator import index
 from pathlib import Path
 from typing import Any
 
@@ -8,6 +7,8 @@ import re
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 CHUNK_SIZE = 1000
 CHUNK_OVERLAP = 50
+CHUNK_MIN = 400
+CHUNK_MAX = 800
 
 def vaildate_get_data(state:ImportGraphState)->tuple[str,str]:
     """
@@ -137,6 +138,57 @@ def _split_chunk_content(chunk:dict[str,Any]) -> list[dict[str,Any]]:
     return sub_chunks
 
 
+def _merge_chunk_content(refine_chunks:list[dict[str,Any]])->list[dict[str,Any]]:
+    """
+    合并同一个parent_title下小于400，合并后小于1000的块
+    条件1：同一parent_title 注意：掉入None陷阱[非空判断and ==]
+    条件2： 前一个小于400合并后小于1000
+    """
+    merges_refine_chunks:list[dict[str,Any]] = [] # 接受合并后的新的chunks
+    # 获取Base作为基准
+    base_chunk:dict[str,Any] = None
+    # 循环获取next
+    for next_chunk in refine_chunks:
+        if base_chunk is None:
+            # base_chunk 为空
+            base_chunk = next_chunk
+            continue
+        # 先判断base是否超过400
+        is_long = len(base_chunk.get("content")) > CHUNK_MIN
+        if not is_long:
+            # 小于等于400
+            is_same_parent_title = base_chunk.get("parent_title") and next_chunk.get("parent_title") == base_chunk.get("parent_title")
+            if is_same_parent_title:
+                # 不是同一个父标题不合并
+                base_content:str = base_chunk.get("content")
+                next_clear_content:str = next_chunk.get("content")[len(next_chunk.get("parent_title"))+1:]
+                is_merage_long = (len(base_chunk.get("base_content")) + len(next_chunk.get("next_clear_content"))) > CHUNK_MAX
+                if not is_merage_long:
+                    # 小于等于
+                    base_chunk['content'] = base_content + "\n" + next_clear_content
+
+                else:
+                    # 同一个父标题大于1000
+                    merges_refine_chunks.append(base_chunk)
+                    base_chunk = next_chunk
+            else:
+                merges_refine_chunks.append(base_chunk)
+                base_chunk = next_chunk
+            # content #标题\n
+        else:
+            # base大于400不需要合并
+            merges_refine_chunks.append(base_chunk)
+            base_chunk= next_chunk
+
+        # 同一个父标题合并小于1000，倒数第一个（next）会合并到倒数第二个（base）->base没有添加到chunks
+        # 倒数第二个是base,倒数第一个是next，不是同一个父标题，
+        if base_chunk:
+            merges_refine_chunks.append(base_chunk)
+    logger.info(f"完成小于400的chunk的合并，合并后的数量：{len(merges_refine_chunks)}")
+    return merges_refine_chunks
+
+
+
 def refine_split_and_merge_chunks(chunks:list[dict[str,Any]]) -> list[dict[str,Any]]:
     """
     精细切割
@@ -149,13 +201,16 @@ def refine_split_and_merge_chunks(chunks:list[dict[str,Any]]) -> list[dict[str,A
     for chunk in chunks:
         if len(chunk.get("content")) > 600:
             # 切割
-        refined_chunks.extend(_split_chunk_content(chunk))
+            refined_chunks.extend(_split_chunk_content(chunk))
         else:
             # 不用切割
             refined_chunks.append(chunk)
 
+    logger.info(f"chunks经过超长以后向短切割处理！切割后的数量：{len(refined_chunks)}")
     # 进行切割后列表进行短合并
-    # 返回最终的处理结果
+    refine_chunks = _merge_chunk_content(refined_chunks)
+    # 返回最终处理结果
+    return refine_chunks
 
 
 
