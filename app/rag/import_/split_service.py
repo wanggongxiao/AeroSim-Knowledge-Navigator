@@ -10,7 +10,7 @@ CHUNK_OVERLAP = 50
 CHUNK_MIN = 400
 CHUNK_MAX = 800
 
-def vaildate_get_data(state:ImportGraphState)->tuple[str,str]:
+def vaildate_get_data(state:ImportGraphState)->tuple[str,str,str]:
     """
     获取并校验参数
     :param state:
@@ -35,7 +35,7 @@ def vaildate_get_data(state:ImportGraphState)->tuple[str,str]:
         state["file_title"] = file_title
     # 清洗和替换数据，统一不同的系统，换成\n
     md_content = md_content.replace("\r\n", "\n").replace("\r", "\n")
-    return md_content,file_title
+    return md_content,file_title,md_path
 
 
 def split_document_by_title(md_content:str, file_title:str)->list[dict[str,Any]]:
@@ -213,6 +213,35 @@ def refine_split_and_merge_chunks(chunks:list[dict[str,Any]]) -> list[dict[str,A
     return refine_chunks
 
 
+def padding_chunks_metadata(chunks):
+    """
+    补充属性
+    :param chunks:
+    :return:
+    """
+    for chunk in chunks:
+        if "parent_title" in chunk:
+            chunk["parent_title"] = chunk["title"]
+        if "part" in chunk:
+            chunk["part"] = 1
+    logger.info{f"完成chunks的元素补充，所属属性完整！"}
+    pass
+
+
+def backup_chunks_json(chunks, md_path):
+    """
+    进行数据备份
+    :param chunks:
+    :param md_path:
+    :return:
+    """
+    import json
+    # 获取json path对象
+    json_path_obj:Path = Path(md_path).parent / f"{Path(md_path).stem}.json"
+    # 写入数据
+    json_path_obj.write_text(data = json.dumps(chunks,ensure_ascii = False ,indent=4),encoding="utf-8")
+    logger.info(f"完成了数据备份")
+
 
 def split_document(state: ImportGraphState) -> ImportGraphState:
     """
@@ -224,10 +253,15 @@ def split_document(state: ImportGraphState) -> ImportGraphState:
     """
 
     # 获取并校验参数
-    md_content,file_title = vaildate_get_data(state)
+    md_content,file_title,md_path = vaildate_get_data(state)
     # 根据语义进行切割
     chunks:list[dict[str,Any]] = split_document_by_title(md_content,file_title)
 
     # 进行chunks的精细切割和合并
     chunks:list[dict[str,Any]] = refine_split_and_merge_chunks(chunks)
+    padding_chunks_metadata(chunks)
+    # 备份chunks的内容
+    backup_chunks_json(chunks,md_path)
+    # 跟新state
+    state['chunks'] = chunks
     return state
