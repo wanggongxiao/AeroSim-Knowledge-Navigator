@@ -1,14 +1,16 @@
 from pathlib import Path
 from typing import Any
+from html import unescape
 
 from app.process.import_.agent.state import ImportGraphState
 from app.shared.runtime.logger import logger
 import re
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 CHUNK_SIZE = 1000
-CHUNK_OVERLAP = 50
 CHUNK_MIN = 400
-CHUNK_MAX = 800
+CHUNK_MAX = 1000
+# 少于400字符的块参与合并，合并后严格小于1000字符。
+MERGE_SHORT_SECTIONS = True
 
 def vaildate_get_data(state:ImportGraphState)->tuple[str,str,str]:
     """
@@ -26,7 +28,7 @@ def vaildate_get_data(state:ImportGraphState)->tuple[str,str,str]:
             # md_path为空，或者不存在
             logger.error(f"md_content内容为空，md_path也为空或者没有对应的文件，业务无法继续，提前终止！！！")
             raise ValueError(f"md_content内容为空，md_path也为空或者没有对应的文件，业务无法继续，提前终止！！！")
-        md_content = Path(md_path).read_text()
+        md_content = Path(md_path).read_text(encoding="utf-8")
         state["md_content"] = md_content
     if not file_title:
         # 文件名为空
@@ -65,10 +67,11 @@ def split_document_by_title(md_content:str, file_title:str)->list[dict[str,Any]]
             # 进入或者出去
             current_title_lines.append(line)
             is_code = not is_code
+            continue
         # 是不是标题
         if not is_code and title_reg.match(line_strip):
-            # 当前行是标题行
-            if not current_title and len(current_title_lines) > 1:
+            # 开始新标题前，保存封面内容或上一节的标题和正文。
+            if current_title_lines and (current_title is None or len(current_title_lines) > 1):
                 chunks.append(
                     {
                         "title":current_title,
@@ -77,27 +80,17 @@ def split_document_by_title(md_content:str, file_title:str)->list[dict[str,Any]]
                     }
                 )
 
-            # else:
-            #     # 连续标题
-            #     current_title = current_title + "-" + line_strip
-            #     current_title_lines = [current_title]
-            #     continue
             if current_title and len(current_title_lines) == 1:
                 current_title = current_title + "-" + line_strip
                 current_title_lines = [current_title]
                 continue
             current_title = line_strip
-            if not current_title and len(current_title_lines) > 0:
-                current_title_lines = [line_strip].extend(current_title_lines)
-                # current_title_lines.append(line_strip)
-            else :
-                current_title_lines = [current_title]
             current_title_lines = [line_strip]
         else:
             # 当前行是普通行
             current_title_lines.append(line_strip)
     # 考虑最后一行没计算的问题
-    if len(current_title_lines) >1:
+    if current_title_lines:
         chunks.append(
             {
                 "title": current_title,
@@ -106,87 +99,256 @@ def split_document_by_title(md_content:str, file_title:str)->list[dict[str,Any]]
             }
         )
 
-    logger.info(f"已经完成了文档的切割！！！！")
+    logger.info(f"已经完成了文档的切割，粗切后的数量：{len(chunks)}")
     return chunks
 
 
-def _split_chunk_content(chunk:dict[str,Any]) -> list[dict[str,Any]]:
-    """
-    内部函数，长chunk的切短
-    :param chunk:
-    :return:
-    """
-    sub_chunks:list[dict[str,Any]] = []
-    content:str = chunk.get("content")
-    deal_content:str = content[len(chunk.get("title"))+1:]
-    prefix = chunk.get("title") + "\n"
+def _text_units(content: str, limit: int) -> list[dict[str, Any]]:
+    """按段落、句子拆成小单元，无分隔符时按字符兜底，不引入重叠正文。"""
     splitter = RecursiveCharacterTextSplitter(
-        chunk_size=CHUNK_SIZE - len(prefix),
-        chunk_overlap=CHUNK_OVERLAP,
-        separators=["\n\n","\n","、","?",",","：","，"]
+        chunk_size=limit,
+        chunk_overlap=0,
+        keep_separator="end",
+        strip_whitespace=False,
+        separators=["\n\n", "\n", "。", "！", "？", "；", "，", "、", " ", ""],
     )
-    for index,text in enumerate(splitter.split_text(deal_content)):
-         sub_chunks.append(
-             {
-                 "file_title":chunk.get("file_title"),
-                 "parent_title":chunk.get("title"),
-                 "title":f"{chunk.get('title')}_{index}",
-                 "part":index,
-                 "content":prefix + text
-             }
-         )
-
-    return sub_chunks
+    return [{"content": text} for text in splitter.split_text(content)]
 
 
-def _merge_chunk_content(refine_chunks:list[dict[str,Any]])->list[dict[str,Any]]:
-    """
-    合并同一个parent_title下小于400，合并后小于1000的块
-    条件1：同一parent_title 注意：掉入None陷阱[非空判断and ==]
-    条件2： 前一个小于400合并后小于1000
-    """
-    merges_refine_chunks:list[dict[str,Any]] = [] # 接受合并后的新的chunks
-    # 获取Base作为基准
-    base_chunk:dict[str,Any] = None
-    # 循环获取next
-    for next_chunk in refine_chunks:
-        if base_chunk is None:
-            # base_chunk 为空
-            base_chunk = next_chunk
-            continue
-        # 先判断base是否超过400
-        is_long = len(base_chunk.get("content")) > CHUNK_MIN
-        if not is_long:
-            # 小于等于400
-            is_same_parent_title = base_chunk.get("parent_title") and next_chunk.get("parent_title") == base_chunk.get("parent_title")
-            if is_same_parent_title:
-                # 不是同一个父标题不合并
-                base_content:str = base_chunk.get("content")
-                next_clear_content:str = next_chunk.get("content")[len(next_chunk.get("parent_title"))+1:]
-                is_merage_long = (len(base_chunk.get("base_content")) + len(next_chunk.get("next_clear_content"))) > CHUNK_MAX
-                if not is_merage_long:
-                    # 小于等于
-                    base_chunk['content'] = base_content + "\n" + next_clear_content
+def _table_as_text(table: str) -> str:
+    """超长单行或复杂表格转为文本，保留单元格内容后再切分。"""
+    text = re.sub(r"</tr\s*>", "\n", table, flags=re.I)
+    text = re.sub(r"</(?:td|th)\s*>", "\t", text, flags=re.I)
+    return unescape(re.sub(r"<[^>]+>", "", text))
 
-                else:
-                    # 同一个父标题大于1000
-                    merges_refine_chunks.append(base_chunk)
-                    base_chunk = next_chunk
-            else:
-                merges_refine_chunks.append(base_chunk)
-                base_chunk = next_chunk
-            # content #标题\n
+
+def _content_units(chunk: dict[str, Any], section_index: int) -> list[dict[str, Any]]:
+    """保留普通文本和表格行的顺序，表格行在输出时重新包成完整table。"""
+    content = chunk.get("content") or ""
+    limit = max(1, min(CHUNK_MIN, CHUNK_SIZE // 2 - 1))
+    units: list[dict[str, Any]] = []
+    position = 0
+    table_reg = re.compile(r"<table\b[^>]*>.*?</table\s*>", re.I | re.S)
+    row_reg = re.compile(r"<tr\b[^>]*>.*?</tr\s*>", re.I | re.S)
+
+    for table_index, match in enumerate(table_reg.finditer(content)):
+        units.extend(_text_units(content[position:match.start()], limit))
+        table = match.group()
+        opening = re.match(r"<table\b[^>]*>", table, flags=re.I).group()
+        closing = re.search(r"</table\s*>$", table, flags=re.I).group()
+        inner = table[len(opening):-len(closing)]
+        rows = row_reg.findall(inner)
+        simple_table = rows and not row_reg.sub("", inner).strip()
+        if simple_table and all(len(opening + row + closing) <= limit for row in rows):
+            for row in rows:
+                units.append({
+                    "content": row,
+                    "table_key": (section_index, table_index),
+                    "table_open": opening,
+                    "table_close": closing,
+                })
+        elif len(table) <= limit:
+            units.append({"content": table})
         else:
-            # base大于400不需要合并
-            merges_refine_chunks.append(base_chunk)
-            base_chunk= next_chunk
+            units.extend(_text_units(_table_as_text(table), limit))
+        position = match.end()
 
-        # 同一个父标题合并小于1000，倒数第一个（next）会合并到倒数第二个（base）->base没有添加到chunks
-        # 倒数第二个是base,倒数第一个是next，不是同一个父标题，
-    if base_chunk:
-        merges_refine_chunks.append(base_chunk)
-    logger.info(f"完成小于400的chunk的合并，合并后的数量：{len(merges_refine_chunks)}")
-    return merges_refine_chunks
+    units.extend(_text_units(content[position:], limit))
+    for unit in units:
+        unit["section_index"] = section_index
+        unit["title"] = chunk.get("parent_title") or chunk.get("title")
+    return units
+
+
+def _render_units(units: list[dict[str, Any]]) -> str:
+    """给跨章节内容保留原标题，给拆开的表格补齐开始、结束标签。"""
+    parts: list[str] = []
+    active_table = None
+    table_close = ""
+    previous_section = None
+    for unit in units:
+        table_key = unit.get("table_key")
+        if table_key != active_table and active_table is not None:
+            parts.append(table_close)
+            active_table = None
+        if previous_section is not None and previous_section != unit["section_index"]:
+            parts.append("\n\n")
+        if table_key is not None and active_table is None:
+            parts.append(unit["table_open"])
+            table_close = unit["table_close"]
+            active_table = table_key
+        parts.append(unit["content"])
+        previous_section = unit["section_index"]
+    if active_table is not None:
+        parts.append(table_close)
+
+    content = "".join(parts).strip()
+    title = units[0]["title"]
+    # 从章节中间开始的块补回标题；过长的标题保存在元数据中。
+    if title and len(title) < CHUNK_MIN and not (
+        content == title or content.startswith(title + "\n")
+    ):
+        content = title + "\n" + content
+    return content
+
+
+def _pack_chunks_by_length(chunks: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """拆分长章节，计算长度时包括标题和表格标签，优先避免过短的尾块。"""
+    if not 0 < CHUNK_MIN <= CHUNK_MAX <= CHUNK_SIZE:
+        raise ValueError("分块长度配置必须满足0 < CHUNK_MIN <= CHUNK_MAX <= CHUNK_SIZE")
+    output: list[dict[str, Any]] = []
+    # 分文件处理，不能为了凑长度把不同文件混到一块。
+    start = 0
+    while start < len(chunks):
+        stop = start + 1
+        while stop < len(chunks) and chunks[stop].get("file_title") == chunks[start].get("file_title"):
+            stop += 1
+        document_chunks = chunks[start:stop]
+        units = [
+            unit
+            for section_index, chunk in enumerate(document_chunks)
+            for unit in _content_units(chunk, section_index)
+        ]
+        count = len(units)
+        # 优先减少短块数量、短缺字符数，再让长度接近范围中点。
+        costs: list[tuple[int, int, int] | None] = [None] * (count + 1)
+        boundaries = [0] * count
+        costs[count] = (0, 0, 0)
+        for left in range(count - 1, -1, -1):
+            for right in range(left + 1, count + 1):
+                size = len(_render_units(units[left:right]))
+                if size > CHUNK_SIZE:
+                    break
+                tail = costs[right]
+                if tail is None:
+                    continue
+                deficit = max(0, CHUNK_MIN - size)
+                score = (
+                    tail[0] + int(deficit > 0),
+                    tail[1] + deficit,
+                    tail[2] + (size - (CHUNK_MIN + CHUNK_SIZE) // 2) ** 2,
+                )
+                if costs[left] is None or score < costs[left]:
+                    costs[left] = score
+                    boundaries[left] = right
+            if costs[left] is None:
+                raise ValueError("单个内容单元超过CHUNK_SIZE，无法生成满足长度上限的分块")
+
+        groups: list[list[dict[str, Any]]] = []
+        cursor = 0
+        while cursor < count:
+            right = boundaries[cursor]
+            groups.append(units[cursor:right])
+            cursor = right
+
+        section_uses: dict[int, int] = {}
+        for group in groups:
+            for section_index in dict.fromkeys(unit["section_index"] for unit in group):
+                section_uses[section_index] = section_uses.get(section_index, 0) + 1
+        part_counters: dict[int, int] = {}
+        file_title = chunks[start].get("file_title")
+        for group_index, group in enumerate(groups):
+            section_indices = list(dict.fromkeys(unit["section_index"] for unit in group))
+            titles = [
+                document_chunks[index].get("parent_title") or document_chunks[index].get("title")
+                for index in section_indices
+            ]
+            if len(section_indices) == 1:
+                section_index = section_indices[0]
+                parent_title = titles[0]
+                part = part_counters.get(section_index, 0)
+                part_counters[section_index] = part + 1
+                title = (
+                    f"{parent_title or file_title}_{part}"
+                    if section_uses[section_index] > 1 else parent_title
+                )
+            else:
+                parent_title = file_title
+                part = group_index
+                title = f"{file_title}_{group_index}"
+            output.append({
+                "file_title": file_title,
+                "parent_title": parent_title,
+                "title": title,
+                "part": part,
+                "source_titles": [title for title in titles if title],
+                "content": _render_units(group),
+            })
+        start = stop
+    return output
+
+
+def _split_chunk_content(chunk: dict[str, Any]) -> list[dict[str, Any]]:
+    """长块按内容边界拆分，最终长度计算包含标题和表格标签。"""
+    return _pack_chunks_by_length([chunk])
+
+
+def _merge_chunk_content(
+    refine_chunks: list[dict[str, Any]], merge_across_sections: bool = False,
+) -> list[dict[str, Any]]:
+    """
+    相邻块中任一块少于CHUNK_MIN时尝试合并，结果必须严格小于CHUNK_MAX。
+    可选跨章节合并并保留各原标题；不修改输入字典。
+    """
+    normalized_chunks = [dict(chunk) for chunk in refine_chunks]
+    padding_chunks_metadata(normalized_chunks)
+    merged_chunks:list[dict[str,Any]] = []
+
+    for next_chunk in normalized_chunks:
+        if not merged_chunks:
+            merged_chunks.append(next_chunk)
+            continue
+
+        base_chunk = merged_chunks[-1]
+        parent_title = base_chunk.get("parent_title")
+        is_same_section = (
+            bool(parent_title)
+            and parent_title == next_chunk.get("parent_title")
+            and base_chunk.get("file_title") == next_chunk.get("file_title")
+            and base_chunk.get("_source_section_index")
+            == next_chunk.get("_source_section_index")
+        )
+        base_content = base_chunk.get("content") or ""
+        next_content = next_chunk.get("content") or ""
+        has_short_chunk = min(len(base_content), len(next_content)) < CHUNK_MIN
+        same_file = base_chunk.get("file_title") == next_chunk.get("file_title")
+
+        if not same_file or not has_short_chunk or not (is_same_section or merge_across_sections):
+            merged_chunks.append(next_chunk)
+            continue
+
+        # 只在标题前缀确实存在时去掉它，避免误删正文。
+        prefix = (parent_title or "") + "\n"
+        next_body = (
+            next_content[len(prefix):]
+            if is_same_section and next_content.startswith(prefix) else next_content
+        )
+        separator = "\n" if is_same_section else "\n\n"
+        combined_content = base_content + separator + next_body
+        if len(combined_content) < CHUNK_MAX:
+            base_titles = base_chunk.get("source_titles") or [base_chunk.get("parent_title")]
+            next_titles = next_chunk.get("source_titles") or [next_chunk.get("parent_title")]
+            base_chunk["source_titles"] = [title for title in base_titles if title]
+            if not is_same_section:
+                base_chunk["source_titles"].extend(title for title in next_titles if title)
+                base_chunk["parent_title"] = base_chunk.get("file_title")
+                base_chunk["part"] = len(merged_chunks) - 1
+                base_chunk["title"] = f"{base_chunk.get('file_title')}_{len(merged_chunks) - 1}"
+                base_chunk["_source_section_index"] = None
+            base_chunk["content"] = combined_content
+        else:
+            merged_chunks.append(next_chunk)
+
+    # 章节索引仅用于本次合并，备份JSON保留原来的字段结构。
+    for chunk in merged_chunks:
+        chunk.pop("_source_section_index", None)
+    lengths = [len(chunk["content"]) for chunk in merged_chunks]
+    logger.info(
+        f"完成短Chunk合并：{len(refine_chunks)} -> {len(merged_chunks)}，"
+        f"合并后长度小于{CHUNK_MAX}字符，"
+        f"最终长度范围：{min(lengths, default=0)}~{max(lengths, default=0)}字符"
+    )
+    return merged_chunks
 
 
 
@@ -196,37 +358,37 @@ def refine_split_and_merge_chunks(chunks:list[dict[str,Any]]) -> list[dict[str,A
     :param chunks:
     :return:
     """
-    # 定义一个接受本方法返回的chunk 列表
+    # 先处理超长内容，再按短块规则合并。
     refined_chunks:list[dict[str,Any]] = []
     # 循环chunks->chunk->是否超长->触发切割
-    for chunk in chunks:
-        if len(chunk.get("content")) > 600:
+    for section_index, chunk in enumerate(chunks):
+        if len(chunk.get("content") or "") > CHUNK_SIZE:
             # 切割
-            refined_chunks.extend(_split_chunk_content(chunk))
+            section_chunks = _split_chunk_content(chunk)
         else:
             # 不用切割
-            refined_chunks.append(chunk)
+            section_chunks = [dict(chunk)]
+
+        # 同名标题可能来自不同章节，不能仅凭标题文本判断是否可以合并。
+        for sub_chunk in section_chunks:
+            sub_chunk["_source_section_index"] = section_index
+            refined_chunks.append(sub_chunk)
 
     logger.info(f"chunks经过超长以后向短切割处理！切割后的数量：{len(refined_chunks)}")
     # 进行切割后列表进行短合并
-    refine_chunks = _merge_chunk_content(refined_chunks)
+    refine_chunks = _merge_chunk_content(
+        refined_chunks, merge_across_sections=MERGE_SHORT_SECTIONS,
+    )
     # 返回最终处理结果
     return refine_chunks
 
 
-def padding_chunks_metadata(chunks):
-    """
-    补充属性
-    :param chunks:
-    :return:
-    """
+def padding_chunks_metadata(chunks:list[dict[str,Any]]) -> None:
+    """补齐普通块的父标题和序号，保留细切时已有的元数据。"""
     for chunk in chunks:
-        if "parent_title" in chunk:
-            chunk["parent_title"] = chunk["title"]
-        if "part" in chunk:
-            chunk["part"] = 1
+        chunk.setdefault("parent_title", chunk.get("title"))
+        chunk.setdefault("part", 0)
     logger.info(f"完成chunks的元素补充，所属属性完整！")
-    pass
 
 
 def backup_chunks_json(chunks, md_path):
@@ -260,7 +422,6 @@ def split_document(state: ImportGraphState) -> ImportGraphState:
 
     # 进行chunks的精细切割和合并
     chunks:list[dict[str,Any]] = refine_split_and_merge_chunks(chunks)
-    padding_chunks_metadata(chunks)
     # 备份chunks的内容
     backup_chunks_json(chunks,md_path)
     # 跟新state
