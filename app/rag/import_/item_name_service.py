@@ -1,5 +1,7 @@
 from typing import Any
 
+from pyarrow.lib import field, DataType
+
 from app.process.import_.agent.state import ImportGraphState
 from pathlib import  Path
 import json
@@ -9,6 +11,7 @@ from config import ITEM_NAME_CONTEST_CHUNK_K,ITEM_NAME_CONTEXT_TOTAL_MAX_CHARS
 from app.shared.runtime.load_prompt import  load_prompt
 from langchain_core.messages import HumanMessage
 from langchain_core.output_parsers import StrOutputParser
+from app.infra.vectorstore.milvus_gateway import milvus_gateway
 
 def validate_and_get_data(state:ImportGraphState)->tuple[list[dict[str,Any]],str]:
     # 获取数据
@@ -67,6 +70,51 @@ def call_llm_return_item_name(chunks, file_title)->str:
     # 返回item_name
 
 
+def padding_item_name_to_chunks(chunks, item_name):
+    """
+    完善chunk属性
+    :param chunks:
+    :param item_name:
+    :return:
+    """
+    for chunk in chunks:
+        chunk['item_name'] = item_name
+
+
+@step_log("prepare_chunks_collection")
+def prepare_chunks_collection() -> None:
+    milvus_client = milvus_gateway.client()
+    collection_name = milvus_gateway.chunks_collection
+    if milvus_client.has_collection(collection_name=collection_name):
+        return
+
+    schema = milvus_client.create_schema(auto_id=True, enable_dynamic_field=True)
+    schema.add_field(field_name="chunk_id", datatype=DataType.INT64, is_primary=True, auto_id=True)
+    schema.add_field(field_name="file_title", datatype=DataType.VARCHAR, max_length=512)
+    schema.add_field(field_name="item_name", datatype=DataType.VARCHAR, max_length=512)
+    schema.add_field(field_name="title", datatype=DataType.VARCHAR, max_length=512)
+    schema.add_field(field_name="parent_title", datatype=DataType.VARCHAR, max_length=512)
+    schema.add_field(field_name="part", datatype=DataType.INT8)
+    schema.add_field(field_name="content", datatype=DataType.VARCHAR, max_length=512)
+    schema.add_field(field_name="dense_vector", datatype=DataType.FLOAT_VECTOR, dim=1024)
+    schema.add_field(field_name="sparse_vector", datatype=DataType.SPARSE_FLOAT_VECTOR)
+
+    index_params = milvus_client.prepare_index_params()
+    index_params.add_index(
+        field_name="dense_vector",
+        index_type="AUTOINDEX",
+        index_name="dense_vector_index",
+        metric_type="IP",
+    )
+    index_params.add_index(
+        field_name="sparse_vector",
+        index_type="SPARSE_INVERTED_INDEX",
+        index_name="sparse_vector_index",
+        metric_type="IP",
+        params={"inverted_index_algo": "DAAT_MAXSCORE"},
+    )
+    milvus_client.create_collection(collection_name=collection_name, schema=schema, index_params=index_params)
+
 
 def recognize_and_index_item_name(state: ImportGraphState) -> ImportGraphState:
     """
@@ -78,4 +126,8 @@ def recognize_and_index_item_name(state: ImportGraphState) -> ImportGraphState:
     """
     chunks,file_title = validate_and_get_data(state)
     item_name:str = call_llm_return_item_name(chunks,file_title)
+    # 先修改chunks的数据-》item_name
+    padding_item_name_to_chunks(chunks,item_name)
+    # 定义向量数据库
+    prepare_chunks_collection()
     return state
