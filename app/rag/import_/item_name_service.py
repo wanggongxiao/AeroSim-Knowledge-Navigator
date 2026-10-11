@@ -4,6 +4,11 @@ from app.process.import_.agent.state import ImportGraphState
 from pathlib import  Path
 import json
 from app.shared.runtime.logger import logger
+from app.infra.llm.providers import llm_provider
+from config import ITEM_NAME_CONTEST_CHUNK_K,ITEM_NAME_CONTEXT_TOTAL_MAX_CHARS
+from app.shared.runtime.load_prompt import  load_prompt
+from langchain_core.messages import HumanMessage
+from langchain_core.output_parsers import StrOutputParser
 
 def validate_and_get_data(state:ImportGraphState)->tuple[list[dict[str,Any]],str]:
     # 获取数据
@@ -31,7 +36,36 @@ def validate_and_get_data(state:ImportGraphState)->tuple[list[dict[str,Any]],str
         state["file_title"] = file_title
         logger.warning(f"file_title不存在，给与默认值：{file_title}")
 
-    return file_title
+    return chunks , file_title
+
+
+def call_llm_return_item_name(chunks, file_title)->str:
+    """
+
+    :param chunks:
+    :param file_title:
+    :return:
+    """
+    # 获取模型客户端对象
+    llm_model = llm_provider.chat()
+    # 拼接模型对应提示词
+    context = ""
+    for chunk in chunks[:ITEM_NAME_CONTEST_CHUNK_K]:
+        context += f"标题：{chunk.get('parent_title')}, 内容：{chunk.get('content')} \n"
+    context = context[:ITEM_NAME_CONTEXT_TOTAL_MAX_CHARS]
+    item_name_regcognition_prompt_text:str = load_prompt("item_name_regcognition",file_title=file_title,context=context)
+    message:str = HumanMessage(
+        content=item_name_regcognition_prompt_text
+    )
+    # 拼接执行调用和执行
+    chains = llm_model | StrOutputParser()
+    item_name = chains.invoke([message])
+    # 判断item_name是否获取成功
+    if not item_name:
+        item_name = file_title
+        logger.warning(f"没有识别出item_name,使用file_name兜底{file_title}")
+    # 返回item_name
+
 
 
 def recognize_and_index_item_name(state: ImportGraphState) -> ImportGraphState:
@@ -43,4 +77,5 @@ def recognize_and_index_item_name(state: ImportGraphState) -> ImportGraphState:
     4. 同步写入主体名称索引
     """
     chunks,file_title = validate_and_get_data(state)
+    item_name:str = call_llm_return_item_name(chunks,file_title)
     return state

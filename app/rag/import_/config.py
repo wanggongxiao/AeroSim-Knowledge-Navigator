@@ -17,3 +17,6 @@ SUPPORTED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp"}
 
 #截取图片的上下文内容
 IMAGE_CONTEXT_SUB_CHARS = 100
+
+ITEM_NAME_CONTEST_CHUNK_K = 5
+ITEM_NAME_CONTEXT_TOTAL_MAX_CHARS = 2000
