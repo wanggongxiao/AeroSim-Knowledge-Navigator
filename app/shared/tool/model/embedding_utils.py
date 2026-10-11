@@ -26,7 +26,7 @@ def get_bge_m3_ef() -> BGEM3EmbeddingFunction:
     # 本地有可以使用本地地址！ 没有使用 "BAAI/bge-m3" 会自动下载！ 如果云端部署也可以使用url地址！
     model_name = embedding_config.bge_m3_path or embedding_config.bge_m3 or _DEFAULT_EMBEDDING_MODEL
     device = embedding_config.bge_device or _DEFAULT_EMBEDDING_DEVICE
-    use_fp16 = embedding_config.
+    use_fp16 = embedding_config.bge_fp16
 
     # 打印模型初始化配置，便于问题排查
     logger.info(

@@ -1,13 +1,13 @@
 from typing import Any
 
-from pyarrow.lib import field, DataType
+from pymilvus import DataType
 
 from app.process.import_.agent.state import ImportGraphState
 from pathlib import  Path
 import json
-from app.shared.runtime.logger import logger
+from app.shared.runtime.logger import logger,step_log
 from app.infra.llm.providers import llm_provider
-from config import ITEM_NAME_CONTEST_CHUNK_K,ITEM_NAME_CONTEXT_TOTAL_MAX_CHARS
+from app.rag.import_.config import  ITEM_NAME_CONTEST_CHUNK_K,ITEM_NAME_CONTEXT_TOTAL_MAX_CHARS
 from app.shared.runtime.load_prompt import  load_prompt
 from langchain_core.messages import HumanMessage
 from langchain_core.output_parsers import StrOutputParser
@@ -56,7 +56,7 @@ def call_llm_return_item_name(chunks, file_title)->str:
     for chunk in chunks[:ITEM_NAME_CONTEST_CHUNK_K]:
         context += f"标题：{chunk.get('parent_title')}, 内容：{chunk.get('content')} \n"
     context = context[:ITEM_NAME_CONTEXT_TOTAL_MAX_CHARS]
-    item_name_regcognition_prompt_text:str = load_prompt("item_name_regcognition",file_title=file_title,context=context)
+    item_name_regcognition_prompt_text:str = load_prompt("item_name_recognition",file_title=file_title,context=context)
     message:str = HumanMessage(
         content=item_name_regcognition_prompt_text
     )
@@ -68,7 +68,7 @@ def call_llm_return_item_name(chunks, file_title)->str:
         item_name = file_title
         logger.warning(f"没有识别出item_name,使用file_name兜底{file_title}")
     # 返回item_name
-
+    return item_name
 
 def padding_item_name_to_chunks(chunks, item_name):
     """
@@ -81,21 +81,17 @@ def padding_item_name_to_chunks(chunks, item_name):
         chunk['item_name'] = item_name
 
 
-@step_log("prepare_chunks_collection")
-def prepare_chunks_collection() -> None:
+@step_log("prepare_item_name_collection")
+def prepare_item_name_collection() -> None:
     milvus_client = milvus_gateway.client()
-    collection_name = milvus_gateway.chunks_collection
+    collection_name = milvus_gateway.item_name_collection
     if milvus_client.has_collection(collection_name=collection_name):
         return
 
     schema = milvus_client.create_schema(auto_id=True, enable_dynamic_field=True)
-    schema.add_field(field_name="chunk_id", datatype=DataType.INT64, is_primary=True, auto_id=True)
+    schema.add_field(field_name="item_name_id", datatype=DataType.INT64, is_primary=True, auto_id=True)
     schema.add_field(field_name="file_title", datatype=DataType.VARCHAR, max_length=512)
     schema.add_field(field_name="item_name", datatype=DataType.VARCHAR, max_length=512)
-    schema.add_field(field_name="title", datatype=DataType.VARCHAR, max_length=512)
-    schema.add_field(field_name="parent_title", datatype=DataType.VARCHAR, max_length=512)
-    schema.add_field(field_name="part", datatype=DataType.INT8)
-    schema.add_field(field_name="content", datatype=DataType.VARCHAR, max_length=512)
     schema.add_field(field_name="dense_vector", datatype=DataType.FLOAT_VECTOR, dim=1024)
     schema.add_field(field_name="sparse_vector", datatype=DataType.SPARSE_FLOAT_VECTOR)
 
@@ -124,14 +120,14 @@ def insert_item_name_data(item_name, file_title):
     :return:
     """
     # 生成数据
-    result = llm_provider.embedding_model()
-    dense_vector = result["dense_vector"][0]
-    sparse_vector = result["sparse_vector"][0]
+    result = llm_provider.embed_documents([item_name])
+    dense_vector = result["dense"][0]
+    sparse_vector = result["sparse"][0]
     # 先删除数
-    milvus_client = milvus_gateway.client
+    milvus_client = milvus_gateway.client()
     milvus_client.delete(
         collection_name=milvus_gateway.item_name_collection,
-        filter = f"file_title = '{file_title}'"
+        filter=f"file_title == {json.dumps(file_title, ensure_ascii=False)}"
     )
     # 插入数据
     milvus_client.insert(
@@ -160,7 +156,7 @@ def recognize_and_index_item_name(state: ImportGraphState) -> ImportGraphState:
     # 先修改chunks的数据-》item_name
     padding_item_name_to_chunks(chunks,item_name)
     # 定义向量数据库
-    prepare_chunks_collection()
+    prepare_item_name_collection()
     insert_item_name_data(item_name,file_title)
     # 跟新status
     state["chunks"] = chunks
