@@ -116,6 +116,37 @@ def prepare_chunks_collection() -> None:
     milvus_client.create_collection(collection_name=collection_name, schema=schema, index_params=index_params)
 
 
+def insert_item_name_data(item_name, file_title):
+    """
+    插入数据
+    :param item_name:
+    :param file_title:
+    :return:
+    """
+    # 生成数据
+    result = llm_provider.embedding_model()
+    dense_vector = result["dense_vector"][0]
+    sparse_vector = result["sparse_vector"][0]
+    # 先删除数
+    milvus_client = milvus_gateway.client
+    milvus_client.delete(
+        collection_name=milvus_gateway.item_name_collection,
+        filter = f"file_title = '{file_title}'"
+    )
+    # 插入数据
+    milvus_client.insert(
+        collection_name=milvus_gateway.item_name_collection,
+        data=[
+            {
+                "item_name": item_name,
+                "file_title": file_title,
+                "dense_vector": dense_vector,
+                "sparse_vector": sparse_vector,
+            }
+        ]
+    )
+
+
 def recognize_and_index_item_name(state: ImportGraphState) -> ImportGraphState:
     """
     主体识别服务：
@@ -130,4 +161,8 @@ def recognize_and_index_item_name(state: ImportGraphState) -> ImportGraphState:
     padding_item_name_to_chunks(chunks,item_name)
     # 定义向量数据库
     prepare_chunks_collection()
+    insert_item_name_data(item_name,file_title)
+    # 跟新status
+    state["chunks"] = chunks
+    state["item_name"] = item_name
     return state
