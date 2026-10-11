@@ -88,7 +88,8 @@ def split_document_by_title(md_content:str, file_title:str)->list[dict[str,Any]]
                 continue
             current_title = line_strip
             if not current_title and len(current_title_lines) > 0:
-                current_title_lines.append(line_strip)
+                current_title_lines = [line_strip].extend(current_title_lines)
+                # current_title_lines.append(line_strip)
             else :
                 current_title_lines = [current_title]
             current_title_lines = [line_strip]
@@ -122,9 +123,9 @@ def _split_chunk_content(chunk:dict[str,Any]) -> list[dict[str,Any]]:
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=CHUNK_SIZE - len(prefix),
         chunk_overlap=CHUNK_OVERLAP,
-        separator=["\n\n","\n","、","?",",","：","，"]
+        separators=["\n\n","\n","、","?",",","：","，"]
     )
-    for index,text in splitter.spilt_text(deal_content):
+    for index,text in enumerate(splitter.split_text(deal_content)):
          sub_chunks.append(
              {
                  "file_title":chunk.get("file_title"),
@@ -182,8 +183,8 @@ def _merge_chunk_content(refine_chunks:list[dict[str,Any]])->list[dict[str,Any]]
 
         # 同一个父标题合并小于1000，倒数第一个（next）会合并到倒数第二个（base）->base没有添加到chunks
         # 倒数第二个是base,倒数第一个是next，不是同一个父标题，
-        if base_chunk:
-            merges_refine_chunks.append(base_chunk)
+    if base_chunk:
+        merges_refine_chunks.append(base_chunk)
     logger.info(f"完成小于400的chunk的合并，合并后的数量：{len(merges_refine_chunks)}")
     return merges_refine_chunks
 
@@ -224,7 +225,7 @@ def padding_chunks_metadata(chunks):
             chunk["parent_title"] = chunk["title"]
         if "part" in chunk:
             chunk["part"] = 1
-    logger.info{f"完成chunks的元素补充，所属属性完整！"}
+    logger.info(f"完成chunks的元素补充，所属属性完整！")
     pass
 
 

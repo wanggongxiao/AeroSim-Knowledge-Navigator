@@ -132,6 +132,8 @@ MINIO_ENDPOINT=127.0.0.1:9000
 
 ```bash
 ssh -p 52031 root@region-41.seetacloud.com
+ssh -p 52031 root@connect.nmb2.seetacloud.com
+ssh -p 48010 root@connect.nmb2.seetacloud.com
 ```
 
 在 Windows PowerShell 中执行：
@@ -139,8 +141,9 @@ ssh -p 52031 root@region-41.seetacloud.com
 ```powershell
 ssh -N -o ExitOnForwardFailure=yes `
   -L 19000:127.0.0.1:9000 `
-  -p 52031 `
-  root@region-41.seetacloud.com
+  -p 48010 `
+  root@connect.nmb2.seetacloud.com
+  
 ```
 
 这个隧道表示：
@@ -189,8 +192,8 @@ uv run python test/test_minio_connection.py
 ssh -N -o ExitOnForwardFailure=yes `
   -L 19000:127.0.0.1:9000 `
   -L 19001:127.0.0.1:9001 `
-  -p 52031 `
-  root@region-41.seetacloud.com
+  -p 48010 `
+  root@connect.nmb2.seetacloud.com
 ```
 
 访问：
