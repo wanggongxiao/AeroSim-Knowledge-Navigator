@@ -9,8 +9,23 @@ def embed_chunks(param):
     pass
 
 
-def require_chunks(state):
-    pass
+@step_log("require_chunks")
+def require_chunks(state: dict) -> list[dict]:
+    """
+    校验导入状态中是否已经生成切块结果。
+
+    Args:
+        state: 导入图当前状态。
+
+    Returns:
+        list[dict]: 已通过校验的切块列表。
+    """
+    chunks = state.get("chunks", [])
+    if not chunks:
+        logger.error("chunks为空,无法继续业务处理!")
+        raise ValueError("chunks为空,无法继续业务处理!")
+    return chunks
+
 @step_log("embed_chunks")
 def embed_chunks(chunks: list[dict], *, step: int = EMBEDDING_BATCH_SIZE) -> list[dict]:
     chunks_vector: list[dict] = []
