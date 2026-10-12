@@ -25,14 +25,17 @@ def test_node_item_name_recognition():
             "chunks": [
                 {
                     "title": "产品简介",
+                    "partent_title":"产品简介",
                     "content": "华为Mate60 Pro是华为公司2023年发布的旗舰智能手机，搭载麒麟9000S芯片，支持卫星通话功能，屏幕尺寸6.82英寸，分辨率2700×1224。"
                 },
                 {
                     "title": "拍照功能",
+                    "partent_title": "拍照功能",
                     "content": "华为Mate60 Pro后置5000万像素超光变摄像头+1200万像素超广角摄像头+4800万像素长焦摄像头，支持5倍光学变焦，100倍数字变焦。"
                 },
                 {
                     "title": "电池参数",
+                    "partent_title": "电池参数",
                     "content": "电池容量5000mAh，支持88W有线超级快充，50W无线超级快充，反向无线充电功能。"
                 }
             ]
