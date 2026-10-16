@@ -9,11 +9,11 @@ from app.shared.runtime.logger import logger
 _milvus_client: MilvusClient | None = None
 
 
-def get_milvus_client() -> MilvusClient | None:
+def get_milvus_client() -> MilvusClient:
     """
     Milvus客户端单例获取方法
     实现客户端连接复用，避免重复创建连接消耗资源
-    :return: MilvusClient实例，连接失败返回None
+    :return: MilvusClient实例；配置缺失或连接失败时抛出异常
     """
     try:
         global _milvus_client
@@ -23,14 +23,14 @@ def get_milvus_client() -> MilvusClient | None:
             # 校验Milvus连接地址配置
             if not milvus_uri:
                 logger.error("Milvus客户端连接失败：缺少MILVUS_URL环境变量配置")
-                return None
+                raise ValueError("缺少 MILVUS_URL 环境变量配置")
             # 初始化Milvus客户端
             _milvus_client = MilvusClient(uri=milvus_uri)
             logger.info("Milvus客户端连接成功")
         return _milvus_client
     except Exception as e:
         logger.error(f"Milvus客户端连接异常：{str(e)}", exc_info=True)
-        return None
+        raise ConnectionError("Milvus 连接失败，请检查 MILVUS_URL、服务状态和端口转发") from e
 
 
 def create_hybrid_search_requests(dense_vector, sparse_vector, dense_params=None, sparse_params=None, expr=None,

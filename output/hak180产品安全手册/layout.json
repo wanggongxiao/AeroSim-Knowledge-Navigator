@@ -37,7 +37,7 @@
                                                 55
                                             ],
                                             "type": "image",
-                                            "image_path": "677a08ee041965bbbdb6b483d6c17d5aaa36a26b6dc96870a2019f0307b8616f.jpg"
+                                            "image_path": "f93ddcd837fa399f0c165da43b0badb013c2961acc828a095c6d98f0a660dbca.jpg"
                                         }
                                     ]
                                 }
@@ -1256,7 +1256,7 @@
                                         603
                                     ],
                                     "type": "text",
-                                    "content": "备和/或导致设备无法运行。",
+                                    "content": "备和/ 或导致设备无法运行。",
                                     "score": 1.0
                                 }
                             ]
@@ -1326,7 +1326,7 @@
                                         624
                                     ],
                                     "type": "text",
-                                    "content": "否则当水（包括加热 空调 通风设备所产生的冷凝水）接触本设",
+                                    "content": "否则当水（包括加热/空调/通风设备所产生的冷凝水）接触本设",
                                     "score": 1.0
                                 }
                             ]
@@ -1459,7 +1459,7 @@
                                         677
                                     ],
                                     "type": "text",
-                                    "content": "如果设备跌落或者已损坏，则有触电的可能性。请从电源插座中拔",
+                                    "content": "•\t如果设备跌落或者已损坏，则有触电的可能性。请从电源插座中拔",
                                     "score": 1.0
                                 }
                             ]
@@ -1480,7 +1480,7 @@
                                         687
                                     ],
                                     "type": "text",
-                                    "content": "掉设备的插头，然后联系 呼叫中心或您当地的 经",
+                                    "content": "掉设备的插头，然后联系 Brother 呼叫中心或您当地的 Brother 经",
                                     "score": 1.0
                                 }
                             ]
@@ -1669,7 +1669,7 @@
                                         761
                                     ],
                                     "type": "text",
-                                    "content": "请勿使用任何易燃物品、任何类型的喷雾剂包含酒精或氨水的有机",
+                                    "content": "•\t请勿使用任何易燃物品、任何类型的喷雾剂包含酒精或氨水的有机",
                                     "score": 1.0
                                 }
                             ]
@@ -1711,7 +1711,7 @@
                                         782
                                     ],
                                     "type": "text",
-                                    "content": "用无绒干抹布。有关如何清洁本设备的说明，请参阅 。",
+                                    "content": "用无绒干抹布。有关如何清洁本设备的说明，请参阅使用说明书。",
                                     "score": 1.0
                                 }
                             ]
@@ -2097,7 +2097,7 @@
                                                 299
                                             ],
                                             "type": "image",
-                                            "image_path": "f3349cded08d6686a93d0a81b9a64ec1e50d9a82cbb88541b37027f085813a15.jpg"
+                                            "image_path": "37eecd8ac02745dac415a628b51c26974067062c9b9747c069579fdaa99dbae9.jpg"
                                         }
                                     ]
                                 }
@@ -2218,7 +2218,7 @@
                                                 380
                                             ],
                                             "type": "image",
-                                            "image_path": "501bb8d2d681e4502d87badb15a68939eadfa086d309c3599f1c36b0bc559177.jpg"
+                                            "image_path": "71f9e17a760882436455f7ddc3a5fd358ce821ceb6e598b76d013d93dc26c943.jpg"
                                         }
                                     ]
                                 }
@@ -2731,7 +2731,7 @@
                                         572
                                     ],
                                     "type": "text",
-                                    "content": "或用手触摸电源线。如果拔出设备的电源插头，请勿触摸损坏 磨",
+                                    "content": "或用手触摸电源线。如果拔出设备的电源插头，请勿触摸损坏/ 磨",
                                     "score": 1.0
                                 }
                             ]
@@ -2878,7 +2878,7 @@
                                         627
                                     ],
                                     "type": "text",
-                                    "content": "按照 正确安装。",
+                                    "content": "按照使用说明书正确安装。",
                                     "score": 1.0
                                 }
                             ]
@@ -3404,7 +3404,7 @@
                                                 239
                                             ],
                                             "type": "image",
-                                            "image_path": "c61a7f4e923881679f747508ae309c39dc221685344b068009256b1b3a40cc00.jpg"
+                                            "image_path": "944ad0b1ae642d4a65bc1b40c979beeb12bc30e6a409b9d9666ee013ff48cc60.jpg"
                                         }
                                     ]
                                 }
@@ -3449,7 +3449,7 @@
                                                 238
                                             ],
                                             "type": "image",
-                                            "image_path": "5067b2891ca4f761e2874921e0eb433aa742afbf38ca8dc509afecbf0aa6a6b5.jpg"
+                                            "image_path": "3bf3b3639360a2c43c223a6ee46c44b27d54f4a79506a17a8b99e6ba4703df40.jpg"
                                         }
                                     ]
                                 }
@@ -3788,7 +3788,7 @@
                                                 486
                                             ],
                                             "type": "image",
-                                            "image_path": "cc5ee1ac24ebb2707d40dc7a234a8b243f55f5bf08fabc683859be6fdf096ffa.jpg"
+                                            "image_path": "0bc44b278a939f7ec6ff239a4423c46a74a6e07572150f9e912f5fa55e0f598d.jpg"
                                         }
                                     ]
                                 }
@@ -3798,7 +3798,7 @@
                         {
                             "bbox": [
                                 599,
-                                494,
+                                493,
                                 874,
                                 536
                             ],
@@ -3930,7 +3930,7 @@
                                                 692
                                             ],
                                             "type": "image",
-                                            "image_path": "8e839864036a7326885565163d99117ea943ecd29a656c85e7aa4052a9b9d28d.jpg"
+                                            "image_path": "baa3590221a744dda3b19dfb126ddc6a3fd79b59cf19ff8d6793b51114c0d57b.jpg"
                                         }
                                     ]
                                 }
@@ -4366,7 +4366,7 @@
                                         222
                                     ],
                                     "type": "text",
-                                    "content": "请勿撕下或损坏设备上的任何注意/ 警告标签以及序列号标签。",
+                                    "content": "请勿撕下或损坏设备上的任何注意 /警告标签以及序列号标签。",
                                     "score": 1.0
                                 }
                             ]
@@ -4718,7 +4718,7 @@
                                             ],
                                             "type": "table",
                                             "html": "<table><tr><td>型号</td><td colspan=\"6\">有害物质</td></tr><tr><td>HAK180</td><td>铅</td><td>汞</td><td>镉</td><td>六价铬</td><td>多溴联苯</td><td>多溴二苯醚</td></tr><tr><td>部件名称</td><td>(Pb)</td><td>(Hg)</td><td>(Cd)</td><td>(Cr(VI))</td><td>(PBB)</td><td>(PBDE)</td></tr><tr><td>框架L单元</td><td>×</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td></tr><tr><td>框架R单元</td><td>×</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td></tr><tr><td>中框架单元</td><td>×</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td></tr><tr><td>框架</td><td>×</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td></tr><tr><td>顶盖单元</td><td>×</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td></tr><tr><td>进纸器单元</td><td>×</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td></tr><tr><td>热熔器</td><td>×</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td></tr><tr><td>盖板</td><td>×</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td></tr><tr><td>标签</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td></tr><tr><td>金属薄片保持单元</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td></tr><tr><td>主电路板</td><td>×</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td></tr><tr><td>低压电源电路板</td><td>×</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td></tr><tr><td>选配件</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td></tr><tr><td>包装材料</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td></tr></table>",
-                                            "image_path": "d11bfff4c4658445e61ac557ef345593f56243b5a7b6956f952909e68eb69fea.jpg"
+                                            "image_path": "39722e9eefd705a0650d4bcda0ba7ce962e14872f2c86e68a5a4df8115942c17.jpg"
                                         }
                                     ]
                                 }
@@ -4755,7 +4755,7 @@
                                         645
                                     ],
                                     "type": "text",
-                                    "content": "本表格依据 的规定编制。",
+                                    "content": "本表格依据 SJ/T 11364 的规定编制。",
                                     "score": 1.0
                                 }
                             ]
@@ -4867,7 +4867,7 @@
                                         685
                                     ],
                                     "type": "text",
-                                    "content": "规定的限量要求。",
+                                    "content": "GB/T 26572 规定的限量要求。",
                                     "score": 1.0
                                 }
                             ]
@@ -5124,7 +5124,7 @@
                                                 55
                                             ],
                                             "type": "image",
-                                            "image_path": "677a08ee041965bbbdb6b483d6c17d5aaa36a26b6dc96870a2019f0307b8616f.jpg"
+                                            "image_path": "f93ddcd837fa399f0c165da43b0badb013c2961acc828a095c6d98f0a660dbca.jpg"
                                         }
                                     ]
                                 }
@@ -6343,7 +6343,7 @@
                                         603
                                     ],
                                     "type": "text",
-                                    "content": "备和/或导致设备无法运行。",
+                                    "content": "备和/ 或导致设备无法运行。",
                                     "score": 1.0
                                 }
                             ]
@@ -6413,7 +6413,7 @@
                                         624
                                     ],
                                     "type": "text",
-                                    "content": "否则当水（包括加热 空调 通风设备所产生的冷凝水）接触本设",
+                                    "content": "否则当水（包括加热/空调/通风设备所产生的冷凝水）接触本设",
                                     "score": 1.0
                                 }
                             ]
@@ -6546,7 +6546,7 @@
                                         677
                                     ],
                                     "type": "text",
-                                    "content": "如果设备跌落或者已损坏，则有触电的可能性。请从电源插座中拔",
+                                    "content": "•\t如果设备跌落或者已损坏，则有触电的可能性。请从电源插座中拔",
                                     "score": 1.0
                                 }
                             ]
@@ -6567,7 +6567,7 @@
                                         687
                                     ],
                                     "type": "text",
-                                    "content": "掉设备的插头，然后联系 呼叫中心或您当地的 经",
+                                    "content": "掉设备的插头，然后联系 Brother 呼叫中心或您当地的 Brother 经",
                                     "score": 1.0
                                 }
                             ]
@@ -6756,7 +6756,7 @@
                                         761
                                     ],
                                     "type": "text",
-                                    "content": "请勿使用任何易燃物品、任何类型的喷雾剂包含酒精或氨水的有机",
+                                    "content": "•\t请勿使用任何易燃物品、任何类型的喷雾剂包含酒精或氨水的有机",
                                     "score": 1.0
                                 }
                             ]
@@ -6798,7 +6798,7 @@
                                         782
                                     ],
                                     "type": "text",
-                                    "content": "用无绒干抹布。有关如何清洁本设备的说明，请参阅 。",
+                                    "content": "用无绒干抹布。有关如何清洁本设备的说明，请参阅使用说明书。",
                                     "score": 1.0
                                 }
                             ]
@@ -7184,7 +7184,7 @@
                                                 299
                                             ],
                                             "type": "image",
-                                            "image_path": "f3349cded08d6686a93d0a81b9a64ec1e50d9a82cbb88541b37027f085813a15.jpg"
+                                            "image_path": "37eecd8ac02745dac415a628b51c26974067062c9b9747c069579fdaa99dbae9.jpg"
                                         }
                                     ]
                                 }
@@ -7305,7 +7305,7 @@
                                                 380
                                             ],
                                             "type": "image",
-                                            "image_path": "501bb8d2d681e4502d87badb15a68939eadfa086d309c3599f1c36b0bc559177.jpg"
+                                            "image_path": "71f9e17a760882436455f7ddc3a5fd358ce821ceb6e598b76d013d93dc26c943.jpg"
                                         }
                                     ]
                                 }
@@ -7818,7 +7818,7 @@
                                         572
                                     ],
                                     "type": "text",
-                                    "content": "或用手触摸电源线。如果拔出设备的电源插头，请勿触摸损坏 磨",
+                                    "content": "或用手触摸电源线。如果拔出设备的电源插头，请勿触摸损坏/ 磨",
                                     "score": 1.0
                                 }
                             ]
@@ -7965,7 +7965,7 @@
                                         627
                                     ],
                                     "type": "text",
-                                    "content": "按照 正确安装。",
+                                    "content": "按照使用说明书正确安装。",
                                     "score": 1.0
                                 }
                             ]
@@ -8491,7 +8491,7 @@
                                                 239
                                             ],
                                             "type": "image",
-                                            "image_path": "c61a7f4e923881679f747508ae309c39dc221685344b068009256b1b3a40cc00.jpg"
+                                            "image_path": "944ad0b1ae642d4a65bc1b40c979beeb12bc30e6a409b9d9666ee013ff48cc60.jpg"
                                         }
                                     ]
                                 }
@@ -8536,7 +8536,7 @@
                                                 238
                                             ],
                                             "type": "image",
-                                            "image_path": "5067b2891ca4f761e2874921e0eb433aa742afbf38ca8dc509afecbf0aa6a6b5.jpg"
+                                            "image_path": "3bf3b3639360a2c43c223a6ee46c44b27d54f4a79506a17a8b99e6ba4703df40.jpg"
                                         }
                                     ]
                                 }
@@ -8875,7 +8875,7 @@
                                                 486
                                             ],
                                             "type": "image",
-                                            "image_path": "cc5ee1ac24ebb2707d40dc7a234a8b243f55f5bf08fabc683859be6fdf096ffa.jpg"
+                                            "image_path": "0bc44b278a939f7ec6ff239a4423c46a74a6e07572150f9e912f5fa55e0f598d.jpg"
                                         }
                                     ]
                                 }
@@ -8885,7 +8885,7 @@
                         {
                             "bbox": [
                                 599,
-                                494,
+                                493,
                                 874,
                                 536
                             ],
@@ -9017,7 +9017,7 @@
                                                 692
                                             ],
                                             "type": "image",
-                                            "image_path": "8e839864036a7326885565163d99117ea943ecd29a656c85e7aa4052a9b9d28d.jpg"
+                                            "image_path": "baa3590221a744dda3b19dfb126ddc6a3fd79b59cf19ff8d6793b51114c0d57b.jpg"
                                         }
                                     ]
                                 }
@@ -9453,7 +9453,7 @@
                                         222
                                     ],
                                     "type": "text",
-                                    "content": "请勿撕下或损坏设备上的任何注意/ 警告标签以及序列号标签。",
+                                    "content": "请勿撕下或损坏设备上的任何注意 /警告标签以及序列号标签。",
                                     "score": 1.0
                                 }
                             ]
@@ -9805,7 +9805,7 @@
                                             ],
                                             "type": "table",
                                             "html": "<table><tr><td>型号</td><td colspan=\"6\">有害物质</td></tr><tr><td>HAK180</td><td>铅</td><td>汞</td><td>镉</td><td>六价铬</td><td>多溴联苯</td><td>多溴二苯醚</td></tr><tr><td>部件名称</td><td>(Pb)</td><td>(Hg)</td><td>(Cd)</td><td>(Cr(VI))</td><td>(PBB)</td><td>(PBDE)</td></tr><tr><td>框架L单元</td><td>×</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td></tr><tr><td>框架R单元</td><td>×</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td></tr><tr><td>中框架单元</td><td>×</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td></tr><tr><td>框架</td><td>×</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td></tr><tr><td>顶盖单元</td><td>×</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td></tr><tr><td>进纸器单元</td><td>×</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td></tr><tr><td>热熔器</td><td>×</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td></tr><tr><td>盖板</td><td>×</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td></tr><tr><td>标签</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td></tr><tr><td>金属薄片保持单元</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td></tr><tr><td>主电路板</td><td>×</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td></tr><tr><td>低压电源电路板</td><td>×</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td></tr><tr><td>选配件</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td></tr><tr><td>包装材料</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td><td>○</td></tr></table>",
-                                            "image_path": "d11bfff4c4658445e61ac557ef345593f56243b5a7b6956f952909e68eb69fea.jpg"
+                                            "image_path": "39722e9eefd705a0650d4bcda0ba7ce962e14872f2c86e68a5a4df8115942c17.jpg"
                                         }
                                     ]
                                 }
@@ -9842,7 +9842,7 @@
                                         645
                                     ],
                                     "type": "text",
-                                    "content": "本表格依据 的规定编制。",
+                                    "content": "本表格依据 SJ/T 11364 的规定编制。",
                                     "score": 1.0
                                 }
                             ]
@@ -9954,7 +9954,7 @@
                                         685
                                     ],
                                     "type": "text",
-                                    "content": "规定的限量要求。",
+                                    "content": "GB/T 26572 规定的限量要求。",
                                     "score": 1.0
                                 }
                             ]
@@ -10003,5 +10003,5 @@
     "_backend": "hybrid",
     "_effort": "medium",
     "_ocr_enable": false,
-    "_version_name": "3.4.0"
+    "_version_name": "3.4.4"
 }

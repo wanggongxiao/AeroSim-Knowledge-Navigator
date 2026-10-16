@@ -35,6 +35,25 @@ def prepare_chunks_collection() -> None:
     milvus_client = milvus_gateway.client()
     collection_name = milvus_gateway.chunks_collection
     if milvus_client.has_collection(collection_name=collection_name):
+        collection = milvus_client.describe_collection(collection_name=collection_name)
+        content_field = next(
+            (field for field in collection["fields"] if field["name"] == "content"),
+            None,
+        )
+        if content_field is None or content_field["type"] != DataType.VARCHAR:
+            raise ValueError(f"Milvus 集合 {collection_name} 必须包含 VARCHAR 类型的 content 字段")
+        max_length = int(content_field.get("params", {}).get("max_length", 0))
+        if max_length < MILVUS_CHUNK_CONTENT_MAX_LENGTH:
+            # Milvus VARCHAR 按 UTF-8 字节计数；已有集合也需要同步容量配置。
+            milvus_client.alter_collection_field(
+                collection_name=collection_name,
+                field_name="content",
+                field_params={"max_length": MILVUS_CHUNK_CONTENT_MAX_LENGTH},
+            )
+            logger.info(
+                f"集合 {collection_name} 的 content 容量已扩展："
+                f"{max_length} -> {MILVUS_CHUNK_CONTENT_MAX_LENGTH} 字节"
+            )
         return
 
     schema = milvus_client.create_schema(auto_id=True, enable_dynamic_field=True)

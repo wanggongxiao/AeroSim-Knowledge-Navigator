@@ -176,16 +176,19 @@ def download_parse_result(zip_url: str, output_dir: Path, file_stem: str) -> Pat
     """Download MinerU's ZIP result to the local output directory."""
     zip_path = output_dir / f"{file_stem}_mineru.zip"
     try:
-        with requests.get(
-            zip_url,
-            stream=True,
-            timeout=MINERU_DOWNLOAD_TIMEOUT_SECONDS,
-        ) as response:
-            response.raise_for_status()
-            with zip_path.open("wb") as output_file:
-                for chunk in response.iter_content(chunk_size=1024 * 1024):
-                    if chunk:
-                        output_file.write(chunk)
+        with requests.Session() as session:
+            # 与文件上传保持一致，避免系统代理中断 CDN 的 TLS 连接。
+            session.trust_env = False
+            with session.get(
+                zip_url,
+                stream=True,
+                timeout=MINERU_DOWNLOAD_TIMEOUT_SECONDS,
+            ) as response:
+                response.raise_for_status()
+                with zip_path.open("wb") as output_file:
+                    for chunk in response.iter_content(chunk_size=1024 * 1024):
+                        if chunk:
+                            output_file.write(chunk)
     except Exception:
         zip_path.unlink(missing_ok=True)
         raise
@@ -194,7 +197,10 @@ def download_parse_result(zip_url: str, output_dir: Path, file_stem: str) -> Pat
     return zip_path
 def download_and_extract_markdown(zip_url:str, local_dir_obj:Path,stem:str)->Path:
     # 根据zip_url地址下载对应压缩文件
-    response = requests.get(url=zip_url,timeout=MINERU_DOWNLOAD_TIMEOUT_SECONDS)
+    with requests.Session() as session:
+        # 上传和结果下载均使用直连，其他服务仍沿用原有代理设置。
+        session.trust_env = False
+        response = session.get(url=zip_url,timeout=MINERU_DOWNLOAD_TIMEOUT_SECONDS)
     if response.status_code != 200:
         logger.error(f"{zip_url}地址无法下载资源，业务无法进行，提前终止！！")
         raise RuntimeError(f"{zip_url}地址无法下载资源，业务无法进行，提前终止！！")
@@ -231,8 +237,9 @@ def download_and_extract_markdown(zip_url:str, local_dir_obj:Path,stem:str)->Pat
             full_md_file_obj = md_file_obj
             break
 
-    full_md_file_obj.rename(full_md_file_obj.with_name(f"{stem}.md"))
-    return full_md_file_obj
+    if full_md_file_obj is None:
+        raise RuntimeError(f"解压结果中没有 {stem}.md 或 full.md，无法确定 Markdown 文件")
+    return full_md_file_obj.rename(full_md_file_obj.with_name(f"{stem}.md"))
 
 
 
@@ -252,4 +259,7 @@ def parse_pdf_to_markdown(state: ImportGraphState) -> ImportGraphState:
     # print(zip_path)
     # 下载并解压md文件
     md_path:Path = download_and_extract_markdown(zip_url, local_dir_obj,pdf_path_obj.stem)
+    state["md_path"] = str(md_path)
+    state["md_content"] = md_path.read_text(encoding="utf-8")
+    state["local_dir"] = str(local_dir_obj)
     return state

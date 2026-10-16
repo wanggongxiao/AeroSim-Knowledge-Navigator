@@ -4,7 +4,7 @@
 from app.shared.runtime.logger import logger,node_log
 from app.shared.utils.task_utils import add_done_task, add_running_task
 from app.process.import_.agent.state import ImportGraphState
-from app.rag.import_ import index_chunks
+from app.rag.import_.index_service import index_chunks
 @node_log("node_import_milvus")
 def node_import_milvus(state: ImportGraphState) -> ImportGraphState:
     """
@@ -60,7 +60,7 @@ if __name__ == '__main__':
                 "content": "Milvus 测试文本 2",
                 "title": "测试标题2",
                 "item_name": "测试项目_Milvus2",  # 必须有 item_name，用于幂等清理
-                "parent_title": "test.pdf2",
+                "parent_title": "test.pdf",
                 "part": 1,
                 "file_title": "test.pdf2",
                 "dense_vector": [0.1] * dim,  # 模拟 Dense Vector

@@ -134,6 +134,7 @@ MINIO_ENDPOINT=127.0.0.1:9000
 ssh -p 52031 root@region-41.seetacloud.com
 ssh -p 52031 root@connect.nmb2.seetacloud.com
 ssh -p 48010 root@connect.nmb2.seetacloud.com
+ssh -p 48010 root@connect.nmb2.seetacloud.com
 ```
 
 在 Windows PowerShell 中执行：
